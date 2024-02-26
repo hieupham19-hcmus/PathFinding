@@ -95,6 +95,7 @@ class Map:
     
     # Assuming _is_valid_position is implemented later if needed
     def _is_valid_position(self, x, y):
+        #TODO: check if the position is valid (not in the polygon or border of the map)
         pass 
     
     def print_map(self):
