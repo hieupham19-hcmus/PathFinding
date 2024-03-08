@@ -246,9 +246,7 @@ class Map:
 
         return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]
 
-    def breadth_first_search_with_diagonal_cost(self):
-        """Find the shortest path from start_point to end_point using Breadth-First Search,
-        considering diagonal moves have a cost of 1.5."""
+    def breadth_first_search(self):
         start, goal = self.start_point, self.end_point
         frontier = [start]  # Use a list as a queue for BFS
         came_from = {start: None}
@@ -273,3 +271,32 @@ class Map:
                     cost_so_far[next] = new_cost  # Update cost with diagonal consideration
 
         return self._reconstruct_path(came_from, start, goal), cost_so_far[goal] 
+    
+    def depth_first_search(self):
+        start, goal = self.start_point, self.end_point
+        frontier = [start]  # Use a list as a stack for DFS
+        came_from = {start: None}
+        cost_so_far = {start: 0}  # Track the cost to reach each node
+
+        while frontier:
+            current = frontier.pop()  # LIFO stack
+
+            if current == goal:
+                break
+
+            for next in self._neighbors(current):
+                # Determine if the move is diagonal or straight
+                if current[0] != next[0] and current[1] != next[1]:  # Diagonal move
+                    new_cost = cost_so_far[current] + 1.5
+                else:  # Straight move
+                    new_cost = cost_so_far[current] + 1
+
+                if next not in came_from or new_cost < cost_so_far.get(next, float('inf')):
+                    frontier.append(next)
+                    came_from[next] = current
+                    cost_so_far[next] = new_cost  # Update cost with diagonal consideration
+
+        if goal in came_from:
+            return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]  # Return the path and total cost
+        else:
+            return None, float('inf')  # No path found
