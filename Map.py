@@ -1,12 +1,13 @@
 import numpy as np
 import heapq
+import random
 
 class Polygon:
     def __init__(self, points, edge_char='*', direction=(0, 0)):
         self.points = points
         self.polygon_path = [] #[(x, y) for x, y in points]
         self.edge_char = edge_char
-        self.direction = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+        self.direction = direction
 
     def _draw_line(self, matrix, p1, p2):
         # Bresenham's line algorithm
@@ -49,40 +50,6 @@ class Polygon:
                 return True
         return False
     
-   
-    def is_on_edge_or_inside_polygon(self, point):
-        if point in self.polygon_path:
-            return True
-            
-        # Check if the point is on the edge of the polygon
-        for i in range(len(self.points)):
-            p1 = self.points[i]
-            p2 = self.points[(i + 1) % len(self.points)]
-            
-            if self._orientation(p1, p2, point) == 0 and self._on_segment(p1, point, p2):
-                return True  # The point is on the edge of the polygon
-
-        # Ray casting algorithm to check if the point is inside the polygon
-        n = len(self.points)
-        inside = False
-        p2x, p2y = 0, 0
-        xints = 0
-        p1x, p1y = self.points[0]
-        for i in range(n + 1):
-            p2x, p2y = self.points[i % n]
-            if point[1] > min(p1y, p2y):
-                if point[1] <= max(p1y, p2y):
-                    if point[0] <= max(p1x, p2x):
-                        if p1y != p2y:
-                            xints = (point[1] - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                        if p1x == p2x or point[0] <= xints:
-                            inside = not inside
-            p1x, p1y = p2x, p2y
-
-        return inside
-
-
-
     def _orientation(self, p, q, r):
         """Determine the orientation of the triplet (p, q, r).
         Returns:
@@ -94,11 +61,34 @@ class Polygon:
         if val == 0:
             return 0
         return 1 if val > 0 else 2
-
+    
     def _on_segment(self, p, q, r):
         """Given three collinear points p, q, and r, check if point q lies on line segment 'pr'."""
         return (q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and
-                q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1]))
+                q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1]))     
+           
+    def is_on_edge_or_inside_polygon(self, point):
+        """Check if a point is on the edge of or inside the polygon."""
+        # Check if the point is on any of the polygon's edges
+        for i in range(len(self.points)):
+            if self._on_segment(self.points[i], point, self.points[(i + 1) % len(self.points)]):
+                return True  # The point is on an edge
+
+        # Ray casting algorithm to check if the point is inside the polygon
+        count = 0
+        p2 = (np.inf, point[1])
+        for i in range(len(self.points)):
+            p1 = self.points[i]
+            p3 = self.points[(i + 1) % len(self.points)]
+
+            if self._lines_intersect(point, p2, p1, p3):
+                if self._orientation(p1, point, p3) == 0:
+                    return self._on_segment(p1, point, p3)
+                count += 1
+
+        # Point is inside if count is odd
+        return count % 2 == 1    
+        
 
     def _lines_intersect(self, p1, p2, p3, p4):
         """Check if the line segments p1p2 and p3p4 intersect."""
@@ -133,7 +123,7 @@ class Polygon:
     
     def move(self, matrix_size):
         #randomly select a direction
-        direction = self.direction[np.random.randint(0, 4)]
+        direction = self.direction[0]
         new_points = [(x + direction[0], y + direction[1]) for x, y in self.points]
         if all(0 < x < matrix_size[1] - 1 and 0 < y < matrix_size[0] - 1 for x, y in new_points):
             self.points = new_points
@@ -189,7 +179,7 @@ class Map:
                 #return False
 
         for polygon in self.polygons:
-            if(polygon.is_on_edge_or_inside_polygon(self.start_point) or polygon.is_on_edge_or_inside_polygon(self.end_point)):\
+            if(polygon.is_on_edge_or_inside_polygon(self.start_point) or polygon.is_on_edge_or_inside_polygon(self.end_point)):
                 raise ValueError("Error: Start and end points are not outside of polygons.")
                 #print("")
                 #return False
@@ -235,7 +225,7 @@ class Map:
         result = []
         for d in dirs:
             next_point = (point[0] + d[0], point[1] + d[1])
-            if 0 <= next_point[0] < self.width and 0 <= next_point[1] < self.height and self.matrix[next_point[1]][next_point[0]] != '#':
+            if 0 <= next_point[0] < self.width and 0 <= next_point[1] < self.height and self.matrix[next_point[1]][next_point[0]] != '*' and self.matrix[next_point[1]][next_point[0]] != '#':
                 # Check if the movement intersects any polygon
                 intersects_polygon = False
                 for polygon in self.polygons:
@@ -247,25 +237,27 @@ class Map:
         return result
 
 
-    def a_star_search(self):
-        """Find the path from start_point to end_point using A* search, including diagonals."""
-        start, goal = self.start_point, self.end_point
+    def _move_cost(self, current, next):
+        """Calculates the cost of moving from the current node to the next node."""
+        if current[0] != next[0] and current[1] != next[1]:  # Diagonal move
+            return 1.5
+        return 1  # Straight move
+    
+    def a_star_search_between_points(self, start, goal):
+        """Standard A* search algorithm from start to a goal."""
         frontier = []
         heapq.heappush(frontier, (0, start))
         came_from = {start: None}
         cost_so_far = {start: 0}
 
         while frontier:
-            current = heapq.heappop(frontier)[1]
+            current_priority, current = heapq.heappop(frontier)
 
             if current == goal:
                 break
 
             for next in self._neighbors(current):
-                if current[0] != next[0] and current[1] != next[1]:  # Diagonal move
-                    new_cost = cost_so_far[current] + 1.5  
-                else:  # Straight move
-                    new_cost = cost_so_far[current] + 1
+                new_cost = cost_so_far[current] + self._move_cost(current, next)
                 if next not in cost_so_far or new_cost < cost_so_far[next]:
                     cost_so_far[next] = new_cost
                     priority = new_cost + self._heuristic(next, goal)
@@ -273,23 +265,134 @@ class Map:
                     came_from[next] = current
 
         if goal not in came_from:
-            return None, float('inf')  
+            return None, float('inf')
 
+        return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]
+    
+    def a_star_search(self):
+        """
+        Modified A* search to include mandatory stops before reaching the final goal.
+        """
+        path_to_goal = []  # This will store the entire path including stops
+        total_cost = 0
+        current_start = self.start_point
+        stops = self.stops.copy()  # Make a copy to avoid modifying the original list
+        goal = self.end_point
+        
+        # Check if there are any stop points left
+        if not stops:
+            # If there are no stop points, just find a path from start to end
+            return self.a_star_search_between_points(current_start, goal)
+
+        next_stop = self._find_nearest_stop(current_start, stops)
+        
+        # Process each stop
+        while stops:
+            path, cost = self.a_star_search_between_points(current_start, next_stop)
+            print("Reached here:", next_stop)
+            if path is None:  # Path not found
+                return None, float('inf')
+            total_cost += cost
+            path_to_goal.extend(path[:-1])  # Exclude the last point to avoid duplication
+            current_start = next_stop
+            stops.remove(next_stop)
+            # Check if there are any stop points left
+            if not stops:
+                break
+            next_stop = self._find_nearest_stop(current_start, stops)
+
+        # Finally, go to the goal
+        final_path, final_cost = self.a_star_search_between_points(current_start, goal)
+        if final_path is None:
+            return None, float('inf')
+        total_cost += final_cost
+        path_to_goal.extend(final_path)
+
+        return path_to_goal, total_cost
+
+    def dijkstra_search_between_points(self, start, goal):
+        frontier = []
+        heapq.heappush(frontier, (0, start))  # Priority queue with starting node
+        came_from = {start: None}  # Track path
+        cost_so_far = {start: 0}  # Track cost from start to each node
+
+        while frontier:
+            current_cost, current = heapq.heappop(frontier)
+
+            if current == goal:
+                break
+
+            for next in self._neighbors(current):
+                new_cost = cost_so_far[current] + self._move_cost(current, next)
+                if next not in cost_so_far or new_cost < cost_so_far[next]:
+                    cost_so_far[next] = new_cost
+                    heapq.heappush(frontier, (new_cost, next))
+                    came_from[next] = current
+
+        if goal not in came_from:
+            return None, float('inf')  # Path not found
+
+        # Reconstruct and return the path using the _reconstruct_path method
         path = self._reconstruct_path(came_from, start, goal)
-        return path, cost_so_far.get(goal, float('inf'))
+        return path, cost_so_far[goal]
+    
+    def dijkstra_search_with_stops(self):
+        total_path = []
+        total_cost = 0
+        current_position = self.start_point
+        stops_remaining = self.stops.copy()  # Make a copy to avoid modifying the original list
 
+        # Function to find the nearest stop and its path & cost
+        def find_and_path_to_nearest_stop(current_position, stops_remaining):
+            nearest_stop = None
+            shortest_path = None
+            shortest_path_cost = float('inf')
+            for stop in stops_remaining:
+                path, cost = self.dijkstra_search_between_points(current_position, stop)
+                if cost < shortest_path_cost:
+                    nearest_stop = stop
+                    shortest_path = path
+                    shortest_path_cost = cost
+            return nearest_stop, shortest_path, shortest_path_cost
+
+        # Repeat until all stops are visited
+        while stops_remaining:
+            nearest_stop, path_to_stop, cost_to_stop = find_and_path_to_nearest_stop(current_position, stops_remaining)
+            if path_to_stop is None:  # Path not found
+                return None, float('inf')
+            total_cost += cost_to_stop
+            total_path.extend(path_to_stop[:-1])  # Exclude the last point (stop) to avoid duplication in path
+            current_position = nearest_stop
+            print("Reached here:", nearest_stop)
+            stops_remaining.remove(nearest_stop)
+
+        # Finally, path from last stop to goal
+        final_path, final_cost = self.dijkstra_search_between_points(current_position, self.end_point)
+        if final_path is None:
+            return None, float('inf')
+        total_cost += final_cost
+        total_path.extend(final_path)
+
+        return total_path, total_cost
+    
+    def _find_nearest_stop(self, current, stop_points):
+        """Find the nearest stop point to the current point based on heuristic."""
+        # This is a simplified version, in practice, you might calculate the actual distance or a heuristic value
+        nearest_stop = min(stop_points, key=lambda stop: self._heuristic(current, stop))
+        return nearest_stop
 
     def _reconstruct_path(self, came_from, start, goal):
-        """Reconstruct the path from start to goal."""
+        """Reconstruct the path from start to goal, including stops visited along the way."""
         current = goal
         path = []
         while current != start:
-            if self.matrix[current[1]][current[0]] != 'G':
-                self.matrix[current[1]][current[0]] = 'X'  # Mark the path on the map
-            path.append(current)
+            if current not in self.stops:  # Include only non-stop points in the path
+                if self.matrix[current[1]][current[0]] != 'G' and self.matrix[current[1]][current[0]] != 'S' and self.matrix[current[1]][current[0]] != 'B':
+                    self.matrix[current[1]][current[0]] = 'X'  # Mark the path on the map
+                path.append(current)
             current = came_from[current]
-        path.append(start)  # optional
-        path.reverse()  # optional
+        path.append(start)  # Include the start point in the path
+        path.reverse()  # Reverse the path to have it in correct order
         return path
     
     def greedy_best_first_search(self):
@@ -358,6 +461,7 @@ class Map:
         path = self._reconstruct_path(came_from, start, goal)
         return path, cost_so_far.get(goal, float('inf'))  # Return the path and its cost
 
+
     def depth_first_search(self):
         start, goal = self.start_point, self.end_point
         frontier = [start]  # Use a list as a stack for DFS
@@ -386,6 +490,7 @@ class Map:
             return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]  # Return the path and total cost
         else:
             return None, float('inf')  # No path found
+
         
     def move_polygons(self):
         directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # Four possible directions (right, up, left, down)
@@ -393,20 +498,23 @@ class Map:
             # Try to move the polygon in a random direction
             valid_move_found = False
             np.random.shuffle(directions)  # Shuffle directions to try them in random order
+            original_points = polygon.points[:]
             for direction in directions:
-                new_points = [(x + direction[0], y + direction[1]) for x, y in polygon.points]
-                # Check if new position is within bounds and does not collide with other polygons
+                new_points = [(x + direction[0], y + direction[1]) for x, y in original_points]
+                # Check if new position is within bounds, does not collide with other polygons,
+                # and does not enclose critical points
                 if self._is_valid_move(new_points) and not self._collides_with_other_polygons(new_points, polygon):
-                    polygon.points = new_points
-                    valid_move_found = True
-                    break
+                    temp_polygon = Polygon(new_points)
+                    if self._critical_points_not_enclosed(temp_polygon):
+                        polygon.points = new_points
+                        valid_move_found = True
+                        break
             if not valid_move_found:
                 # If no valid move is found, the polygon does not move
-                # Alternatively, implement a more sophisticated strategy here
                 pass
 
-            # Redraw the map with updated polygon positions
-            self._redraw_map()
+        # Redraw the map with updated polygon positions
+        self._redraw_map()
 
     def _is_valid_move(self, points):
         """Check if the new position of a polygon is within the map boundaries."""
@@ -421,6 +529,19 @@ class Map:
                 if polygon.is_on_edge_or_inside_polygon(point):
                     return True  # Collision detected
         return False
+
+    
+    def _critical_points_not_enclosed(self, new_polygon):
+        """Check that start_point, end_point, and stops are not inside the new position of the moving polygon or any other polygon."""
+        critical_points = [self.start_point, self.end_point] + self.stops
+        for point in critical_points:
+            if new_polygon.is_on_edge_or_inside_polygon(point):
+                return False  # A critical point is inside the new polygon
+            for polygon in self.polygons:
+                if polygon.is_on_edge_or_inside_polygon(point):
+                    return False  # A critical point is inside another polygon
+        return True
+    
 
     def _redraw_map(self):
         """Clear and redraw the map based on the current positions of polygons and other entities."""
