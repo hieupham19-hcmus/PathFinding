@@ -28,9 +28,7 @@ class Polygon:
             if e2 <= dx:
                 err += dx
                 y0 += sy
-    
-    #Ray casting algorithm
-
+                
     def draw(self, matrix):  # Renamed for clarity
         for i in range(len(self.points)):
             p1 = self.points[i]
@@ -163,6 +161,7 @@ class Map:
         """Calculate the Manhattan distance between two points."""
         return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
+
     def _neighbors(self, point):
         dirs = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (1, -1), (-1, -1), (-1, 1)]  # Including diagonals
         result = []
@@ -178,6 +177,7 @@ class Map:
                 if not intersects_polygon:
                     result.append(next_point)
         return result
+
 
     def a_star_search(self):
         """Find the path from start_point to end_point using A* search, including diagonals."""
@@ -204,7 +204,12 @@ class Map:
                     heapq.heappush(frontier, (priority, next))
                     came_from[next] = current
 
-        return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]
+        if goal not in came_from:
+            return None, float('inf')  
+
+        path = self._reconstruct_path(came_from, start, goal)
+        return path, cost_so_far.get(goal, float('inf'))
+
 
     def _reconstruct_path(self, came_from, start, goal):
         """Reconstruct the path from start to goal."""
@@ -244,7 +249,11 @@ class Map:
                     heapq.heappush(frontier, (priority, next))
                     came_from[next] = current
 
-        return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]
+        if goal not in came_from:
+            return None, float('inf')  
+
+        path = self._reconstruct_path(came_from, start, goal)
+        return path, cost_so_far.get(goal, float('inf'))
 
     def breadth_first_search(self):
         start, goal = self.start_point, self.end_point
@@ -270,8 +279,15 @@ class Map:
                     came_from[next] = current
                     cost_so_far[next] = new_cost  # Update cost with diagonal consideration
 
-        return self._reconstruct_path(came_from, start, goal), cost_so_far[goal] 
-    
+        # Check if the goal was reached
+        if goal not in came_from:
+            # No path found, handle accordingly
+            return None, float('inf')  # Example: return None for the path and infinity for the cost
+
+        # Path was found, reconstruct and return it
+        path = self._reconstruct_path(came_from, start, goal)
+        return path, cost_so_far.get(goal, float('inf'))  # Return the path and its cost
+
     def depth_first_search(self):
         start, goal = self.start_point, self.end_point
         frontier = [start]  # Use a list as a stack for DFS
