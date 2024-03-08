@@ -4,6 +4,7 @@ import heapq
 class Polygon:
     def __init__(self, points, edge_char='#', direction=(0, 0)):
         self.points = points
+        self.polygon_path = [] #[(x, y) for x, y in points]
         self.edge_char = edge_char
         self.direction = direction
 
@@ -17,8 +18,11 @@ class Polygon:
         sy = 1 if y0 < y1 else -1
         err = dx + dy  # Note the change here
         
+        self.polygon_path.append((x0, y0))
+        
         while True:
             matrix[y0][x0] = self.edge_char  # Changed to 2D list indexing
+            self.polygon_path.append((x0, y0))
             if x0 == x1 and y0 == y1:
                 break
             e2 = 2 * err
@@ -28,6 +32,8 @@ class Polygon:
             if e2 <= dx:
                 err += dx
                 y0 += sy
+        
+        #self.polygon_path.append((x1, y1))
                 
     def draw(self, matrix):  # Renamed for clarity
         for i in range(len(self.points)):
@@ -44,6 +50,40 @@ class Polygon:
             if self._lines_intersect(p1, p2, p3, p4):
                 return True
         return False
+    
+   
+    def is_on_edge_or_inside_polygon(self, point):
+        if point in self.polygon_path:
+            return True
+            
+        # Check if the point is on the edge of the polygon
+        for i in range(len(self.points)):
+            p1 = self.points[i]
+            p2 = self.points[(i + 1) % len(self.points)]
+            
+            if self._orientation(p1, p2, point) == 0 and self._on_segment(p1, point, p2):
+                return True  # The point is on the edge of the polygon
+
+        # Ray casting algorithm to check if the point is inside the polygon
+        n = len(self.points)
+        inside = False
+        p2x, p2y = 0, 0
+        xints = 0
+        p1x, p1y = self.points[0]
+        for i in range(n + 1):
+            p2x, p2y = self.points[i % n]
+            if point[1] > min(p1y, p2y):
+                if point[1] <= max(p1y, p2y):
+                    if point[0] <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xints = (point[1] - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or point[0] <= xints:
+                            inside = not inside
+            p1x, p1y = p2x, p2y
+
+        return inside
+
+
 
     def _orientation(self, p, q, r):
         """Determine the orientation of the triplet (p, q, r).
@@ -109,7 +149,7 @@ class Map:
         self.start_point = (0, 0)
         self.end_point = (0, 0)
 
-    def get_input_from_file(self, file_name):
+    def get_input_from_file(self, file_name) -> True:
         with open(file_name, 'r') as file:
             lines = file.read().splitlines()
 
@@ -126,9 +166,7 @@ class Map:
         points = list(map(int, lines[1].split(',')))
         self.start_point = (points[0], points[1])
         self.end_point = (points[2], points[3])
-        self.matrix[self.start_point[1]][self.start_point[0]] = 'S'
-        self.matrix[self.end_point[1]][self.end_point[0]] = 'G'
-
+        
         for i in range(4, len(points), 2):
             stop = (points[i], points[i+1])
             self.stops.append(stop)
@@ -144,11 +182,38 @@ class Map:
                 self.add_polygon(polygon_points)
             else:
                 print("Error: Polygon data is not correctly formatted (odd number of points).")
+                return False
 
+        for polygon in self.polygons:
+            if(polygon.is_on_edge_or_inside_polygon(self.start_point) or polygon.is_on_edge_or_inside_polygon(self.end_point)):
+                print("Error: Start and end points are not outside of polygons.")
+                return False
+            else:
+                self.matrix[self.start_point[1]][self.start_point[0]] = 'S'
+                self.matrix[self.end_point[1]][self.end_point[0]] = 'G'
+        
+        return True
+    
     def add_polygon(self, points, edge_char='#'):
-        polygon = Polygon(points, edge_char)
-        self.polygons.append(polygon)
-        polygon.draw(self.matrix)
+        # Create a temporary polygon object for intersection checks
+        temp_polygon = Polygon(points, edge_char)
+
+        # Check for edge intersections with existing polygons
+        for existing_polygon in self.polygons:
+            for i, point in enumerate(temp_polygon.points):
+                next_point = temp_polygon.points[(i + 1) % len(temp_polygon.points)]
+                if existing_polygon.intersects_edge(point, next_point):
+                    raise ValueError("Polygon edges intersect with an existing polygon.")
+
+        # Check if any point of the new polygon is inside an existing polygon
+        for point in temp_polygon.points:
+            for existing_polygon in self.polygons:
+                if existing_polygon.is_on_edge_or_inside_polygon(point):
+                    raise ValueError("A point of the new polygon is inside an existing polygon.")
+
+        # If no intersections or inside points, add the polygon to the map
+        self.polygons.append(temp_polygon)
+        temp_polygon.draw(self.matrix)
 
 
     
@@ -158,7 +223,6 @@ class Map:
 
     
     def _heuristic(self, a, b):
-        """Calculate the Manhattan distance between two points."""
         return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
 
@@ -216,6 +280,8 @@ class Map:
         current = goal
         path = []
         while current != start:
+            if self.matrix[current[1]][current[0]] != 'G':
+                self.matrix[current[1]][current[0]] = 'X'  # Mark the path on the map
             path.append(current)
             current = came_from[current]
         path.append(start)  # optional
