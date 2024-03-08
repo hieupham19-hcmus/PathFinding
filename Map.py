@@ -2,11 +2,11 @@ import numpy as np
 import heapq
 
 class Polygon:
-    def __init__(self, points, edge_char='#', direction=(0, 0)):
+    def __init__(self, points, edge_char='*', direction=(0, 0)):
         self.points = points
         self.polygon_path = [] #[(x, y) for x, y in points]
         self.edge_char = edge_char
-        self.direction = direction
+        self.direction = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 
     def _draw_line(self, matrix, p1, p2):
         # Bresenham's line algorithm
@@ -17,8 +17,6 @@ class Polygon:
         sx = 1 if x0 < x1 else -1
         sy = 1 if y0 < y1 else -1
         err = dx + dy  # Note the change here
-        
-        self.polygon_path.append((x0, y0))
         
         while True:
             matrix[y0][x0] = self.edge_char  # Changed to 2D list indexing
@@ -134,10 +132,15 @@ class Polygon:
         return False
     
     def move(self, matrix_size):
-        new_points = [(x + self.direction[0], y + self.direction[1]) for x, y in self.points]
-        if all(0 <= x < matrix_size[1] and 0 <= y < matrix_size[0] for x, y in new_points):
+        #randomly select a direction
+        direction = self.direction[np.random.randint(0, 4)]
+        new_points = [(x + direction[0], y + direction[1]) for x, y in self.points]
+        if all(0 < x < matrix_size[1] - 1 and 0 < y < matrix_size[0] - 1 for x, y in new_points):
             self.points = new_points
         # Implement edge collision handling as needed
+        
+        
+        
 
 class Map:
     def __init__(self):
@@ -174,27 +177,29 @@ class Map:
 
         number_of_polygons = int(lines[2])
         
-        for line in lines[3: 3 + number_of_polygons - 1]:
+        for line in lines[3: 3 + number_of_polygons]:
             raw_polygon = list(map(int, line.split(',')))
             # Ensure raw_polygon has an even number of elements
             if len(raw_polygon) % 2 == 0:
                 polygon_points = [(raw_polygon[i], raw_polygon[i + 1]) for i in range(0, len(raw_polygon), 2)]
                 self.add_polygon(polygon_points)
             else:
-                print("Error: Polygon data is not correctly formatted (odd number of points).")
-                return False
+                raise ValueError("Polygon data is not correctly formatted (odd number of points).")
+                #print("Error: ")
+                #return False
 
         for polygon in self.polygons:
-            if(polygon.is_on_edge_or_inside_polygon(self.start_point) or polygon.is_on_edge_or_inside_polygon(self.end_point)):
-                print("Error: Start and end points are not outside of polygons.")
-                return False
+            if(polygon.is_on_edge_or_inside_polygon(self.start_point) or polygon.is_on_edge_or_inside_polygon(self.end_point)):\
+                raise ValueError("Error: Start and end points are not outside of polygons.")
+                #print("")
+                #return False
             else:
                 self.matrix[self.start_point[1]][self.start_point[0]] = 'S'
                 self.matrix[self.end_point[1]][self.end_point[0]] = 'G'
         
         return True
     
-    def add_polygon(self, points, edge_char='#'):
+    def add_polygon(self, points, edge_char='*'):
         # Create a temporary polygon object for intersection checks
         temp_polygon = Polygon(points, edge_char)
 
@@ -216,7 +221,6 @@ class Map:
         temp_polygon.draw(self.matrix)
 
 
-    
     def print_map(self):
         for row in self.matrix[::-1]:
             print(''.join(row))
@@ -382,3 +386,51 @@ class Map:
             return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]  # Return the path and total cost
         else:
             return None, float('inf')  # No path found
+        
+    def move_polygons(self):
+        directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # Four possible directions (right, up, left, down)
+        for polygon in self.polygons:
+            # Try to move the polygon in a random direction
+            valid_move_found = False
+            np.random.shuffle(directions)  # Shuffle directions to try them in random order
+            for direction in directions:
+                new_points = [(x + direction[0], y + direction[1]) for x, y in polygon.points]
+                # Check if new position is within bounds and does not collide with other polygons
+                if self._is_valid_move(new_points) and not self._collides_with_other_polygons(new_points, polygon):
+                    polygon.points = new_points
+                    valid_move_found = True
+                    break
+            if not valid_move_found:
+                # If no valid move is found, the polygon does not move
+                # Alternatively, implement a more sophisticated strategy here
+                pass
+
+            # Redraw the map with updated polygon positions
+            self._redraw_map()
+
+    def _is_valid_move(self, points):
+        """Check if the new position of a polygon is within the map boundaries."""
+        return all(0 < x < self.width - 1 and 0 < y < self.height - 1 for x, y in points)
+
+    def _collides_with_other_polygons(self, new_points, moving_polygon):
+        """Check if moving a polygon to new points would result in a collision with any other polygon."""
+        for polygon in self.polygons:
+            if polygon == moving_polygon:
+                continue  # Skip the moving polygon itself
+            for point in new_points:
+                if polygon.is_on_edge_or_inside_polygon(point):
+                    return True  # Collision detected
+        return False
+
+    def _redraw_map(self):
+        """Clear and redraw the map based on the current positions of polygons and other entities."""
+        # Clear non-fixed elements from the map
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.matrix[i][j] not in ('S', 'G', '#', 'B'):  # Preserve start, goal, walls, and stops
+                    self.matrix[i][j] = '0'
+        # Redraw all polygons
+        for polygon in self.polygons:
+            polygon.polygon_path = []
+            polygon.draw(self.matrix)
+            
