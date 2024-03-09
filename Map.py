@@ -1,11 +1,11 @@
 import numpy as np
 import heapq
-import random
+
 
 class Polygon:
     def __init__(self, points, edge_char='*', direction=(0, 0)):
         self.points = points
-        self.polygon_path = [] #[(x, y) for x, y in points]
+        self.polygon_path = []  # [(x, y) for x, y in points]
         self.edge_char = edge_char
         self.direction = direction
 
@@ -18,7 +18,7 @@ class Polygon:
         sx = 1 if x0 < x1 else -1
         sy = 1 if y0 < y1 else -1
         err = dx + dy  # Note the change here
-        
+
         while True:
             matrix[y0][x0] = self.edge_char  # Changed to 2D list indexing
             self.polygon_path.append((x0, y0))
@@ -31,9 +31,9 @@ class Polygon:
             if e2 <= dx:
                 err += dx
                 y0 += sy
-        
-        #self.polygon_path.append((x1, y1))
-                
+
+        # self.polygon_path.append((x1, y1))
+
     def draw(self, matrix):  # Renamed for clarity
         for i in range(len(self.points)):
             p1 = self.points[i]
@@ -49,7 +49,7 @@ class Polygon:
             if self._lines_intersect(p1, p2, p3, p4):
                 return True
         return False
-    
+
     def _orientation(self, p, q, r):
         """Determine the orientation of the triplet (p, q, r).
         Returns:
@@ -61,12 +61,12 @@ class Polygon:
         if val == 0:
             return 0
         return 1 if val > 0 else 2
-    
+
     def _on_segment(self, p, q, r):
         """Given three collinear points p, q, and r, check if point q lies on line segment 'pr'."""
-        return (q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and
-                q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1]))     
-           
+        return (max(p[0], r[0]) >= q[0] >= min(p[0], r[0]) and
+                max(p[1], r[1]) >= q[1] >= min(p[1], r[1]))
+
     def is_on_edge_or_inside_polygon(self, point):
         """Check if a point is on the edge of or inside the polygon."""
         # Check if the point is on any of the polygon's edges
@@ -87,8 +87,7 @@ class Polygon:
                 count += 1
 
         # Point is inside if count is odd
-        return count % 2 == 1    
-        
+        return count % 2 == 1
 
     def _lines_intersect(self, p1, p2, p3, p4):
         """Check if the line segments p1p2 and p3p4 intersect."""
@@ -120,17 +119,15 @@ class Polygon:
 
         # Doesn't fall in any of the above cases
         return False
-    
+
     def move(self, matrix_size):
-        #randomly select a direction
+        # randomly select a direction
         direction = self.direction[0]
         new_points = [(x + direction[0], y + direction[1]) for x, y in self.points]
         if all(0 < x < matrix_size[1] - 1 and 0 < y < matrix_size[0] - 1 for x, y in new_points):
             self.points = new_points
         # Implement edge collision handling as needed
-        
-        
-        
+
 
 class Map:
     def __init__(self):
@@ -159,14 +156,14 @@ class Map:
         points = list(map(int, lines[1].split(',')))
         self.start_point = (points[0], points[1])
         self.end_point = (points[2], points[3])
-        
+
         for i in range(4, len(points), 2):
-            stop = (points[i], points[i+1])
+            stop = (points[i], points[i + 1])
             self.stops.append(stop)
             self.matrix[stop[1]][stop[0]] = 'B'
 
         number_of_polygons = int(lines[2])
-        
+
         for line in lines[3: 3 + number_of_polygons]:
             raw_polygon = list(map(int, line.split(',')))
             # Ensure raw_polygon has an even number of elements
@@ -175,20 +172,21 @@ class Map:
                 self.add_polygon(polygon_points)
             else:
                 raise ValueError("Polygon data is not correctly formatted (odd number of points).")
-                #print("Error: ")
-                #return False
+                # print("Error: ")
+                # return False
 
         for polygon in self.polygons:
-            if(polygon.is_on_edge_or_inside_polygon(self.start_point) or polygon.is_on_edge_or_inside_polygon(self.end_point)):
+            if (polygon.is_on_edge_or_inside_polygon(self.start_point) or polygon.is_on_edge_or_inside_polygon(
+                    self.end_point)):
                 raise ValueError("Error: Start and end points are not outside of polygons.")
-                #print("")
-                #return False
+                # print("")
+                # return False
             else:
                 self.matrix[self.start_point[1]][self.start_point[0]] = 'S'
                 self.matrix[self.end_point[1]][self.end_point[0]] = 'G'
-        
+
         return True
-    
+
     def add_polygon(self, points, edge_char='*'):
         # Create a temporary polygon object for intersection checks
         temp_polygon = Polygon(points, edge_char)
@@ -210,22 +208,20 @@ class Map:
         self.polygons.append(temp_polygon)
         temp_polygon.draw(self.matrix)
 
-
     def print_map(self):
         for row in self.matrix[::-1]:
             print(''.join(row))
 
-    
     def _heuristic(self, a, b):
         return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
-
 
     def _neighbors(self, point):
         dirs = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (1, -1), (-1, -1), (-1, 1)]  # Including diagonals
         result = []
         for d in dirs:
             next_point = (point[0] + d[0], point[1] + d[1])
-            if 0 <= next_point[0] < self.width and 0 <= next_point[1] < self.height and self.matrix[next_point[1]][next_point[0]] != '*' and self.matrix[next_point[1]][next_point[0]] != '#':
+            if 0 <= next_point[0] < self.width and 0 <= next_point[1] < self.height and self.matrix[next_point[1]][
+                next_point[0]] != '*' and self.matrix[next_point[1]][next_point[0]] != '#':
                 # Check if the movement intersects any polygon
                 intersects_polygon = False
                 for polygon in self.polygons:
@@ -236,13 +232,12 @@ class Map:
                     result.append(next_point)
         return result
 
-
     def _move_cost(self, current, next):
         """Calculates the cost of moving from the current node to the next node."""
         if current[0] != next[0] and current[1] != next[1]:  # Diagonal move
             return 1.5
         return 1  # Straight move
-    
+
     def a_star_search_between_points(self, start, goal):
         """Standard A* search algorithm from start to a goal."""
         frontier = []
@@ -268,7 +263,7 @@ class Map:
             return None, float('inf')
 
         return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]
-    
+
     def a_star_search(self):
         """
         Modified A* search to include mandatory stops before reaching the final goal.
@@ -278,14 +273,14 @@ class Map:
         current_start = self.start_point
         stops = self.stops.copy()  # Make a copy to avoid modifying the original list
         goal = self.end_point
-        
+
         # Check if there are any stop points left
         if not stops:
             # If there are no stop points, just find a path from start to end
             return self.a_star_search_between_points(current_start, goal)
 
         next_stop = self._find_nearest_stop(current_start, stops)
-        
+
         # Process each stop
         while stops:
             path, cost = self.a_star_search_between_points(current_start, next_stop)
@@ -312,9 +307,9 @@ class Map:
 
     def dijkstra_search_between_points(self, start, goal):
         frontier = []
-        heapq.heappush(frontier, (0, start))  # Priority queue with starting node
-        came_from = {start: None}  # Track path
-        cost_so_far = {start: 0}  # Track cost from start to each node
+        heapq.heappush(frontier, (0, start))
+        came_from = {start: None}
+        cost_so_far = {start: 0}
 
         while frontier:
             current_cost, current = heapq.heappop(frontier)
@@ -328,21 +323,33 @@ class Map:
                     cost_so_far[next] = new_cost
                     heapq.heappush(frontier, (new_cost, next))
                     came_from[next] = current
+                    # Cập nhật trực tiếp đường đi trên đồ thị (nếu cần)
 
         if goal not in came_from:
-            return None, float('inf')  # Path not found
+            return None, float('inf')
 
-        # Reconstruct and return the path using the _reconstruct_path method
-        path = self._reconstruct_path(came_from, start, goal)
+        # Trực tiếp tái tạo đường đi từ 'came_from' mà không cần hàm _reconstruct_path
+        path = []
+        current = goal
+        while current != start:
+            path.append(current)
+            current = came_from[current]
+        path.append(start)
+        path.reverse()
         return path, cost_so_far[goal]
-    
+
+    def mark_path_on_graph(self, path):
+        """Đánh dấu đường đi đã chọn trên đồ thị."""
+        for point in path:
+            if point not in [self.start_point, self.end_point] + self.stops:
+                self.matrix[point[1]][point[0]] = 'X'
+
     def dijkstra_search_with_stops(self):
         total_path = []
         total_cost = 0
         current_position = self.start_point
-        stops_remaining = self.stops.copy()  # Make a copy to avoid modifying the original list
+        stops_remaining = self.stops.copy()
 
-        # Function to find the nearest stop and its path & cost
         def find_and_path_to_nearest_stop(current_position, stops_remaining):
             nearest_stop = None
             shortest_path = None
@@ -355,26 +362,28 @@ class Map:
                     shortest_path_cost = cost
             return nearest_stop, shortest_path, shortest_path_cost
 
-        # Repeat until all stops are visited
         while stops_remaining:
-            nearest_stop, path_to_stop, cost_to_stop = find_and_path_to_nearest_stop(current_position, stops_remaining)
-            if path_to_stop is None:  # Path not found
-                return None, float('inf')
+            nearest_stop, path_to_stop, cost_to_stop = find_and_path_to_nearest_stop(current_position,
+                                                                                     stops_remaining)
+            if path_to_stop is None:
+                return None, float('inf')  # Path not found to one of the stops
             total_cost += cost_to_stop
-            total_path.extend(path_to_stop[:-1])  # Exclude the last point (stop) to avoid duplication in path
+            total_path.extend(path_to_stop[:-1])  # Exclude the last point to avoid duplication
             current_position = nearest_stop
-            print("Reached here:", nearest_stop)
             stops_remaining.remove(nearest_stop)
 
-        # Finally, path from last stop to goal
+        # Add final leg from last stop to end point
         final_path, final_cost = self.dijkstra_search_between_points(current_position, self.end_point)
         if final_path is None:
-            return None, float('inf')
+            return None, float('inf')  # Path not found from last stop to end point
         total_cost += final_cost
         total_path.extend(final_path)
 
+        # Now that the complete path is determined, mark it on the graph
+        self.mark_path_on_graph(total_path)
+
         return total_path, total_cost
-    
+
     def _find_nearest_stop(self, current, stop_points):
         """Find the nearest stop point to the current point based on heuristic."""
         # This is a simplified version, in practice, you might calculate the actual distance or a heuristic value
@@ -387,14 +396,15 @@ class Map:
         path = []
         while current != start:
             if current not in self.stops:  # Include only non-stop points in the path
-                if self.matrix[current[1]][current[0]] != 'G' and self.matrix[current[1]][current[0]] != 'S' and self.matrix[current[1]][current[0]] != 'B':
+                if self.matrix[current[1]][current[0]] != 'G' and self.matrix[current[1]][current[0]] != 'S' and \
+                        self.matrix[current[1]][current[0]] != 'B':
                     self.matrix[current[1]][current[0]] = 'X'  # Mark the path on the map
                 path.append(current)
             current = came_from[current]
         path.append(start)  # Include the start point in the path
         path.reverse()  # Reverse the path to have it in correct order
         return path
-    
+
     def greedy_best_first_search(self):
         """Find the path from start_point to end_point using Greedy Best-First Search,
         including the cost of straight and diagonal moves, and keep track of the path cost."""
@@ -423,10 +433,74 @@ class Map:
                     came_from[next] = current
 
         if goal not in came_from:
-            return None, float('inf')  
+            return None, float('inf')
 
         path = self._reconstruct_path(came_from, start, goal)
         return path, cost_so_far.get(goal, float('inf'))
+
+    def greedy_best_first_search_with_stops(self):
+        """
+        Modified Greedy Best-First Search to include mandatory stops before reaching the final goal.
+        """
+        path_to_goal = []  # This will store the entire path including stops
+        total_cost = 0
+        current_start = self.start_point
+        stops = self.stops.copy()  # Make a copy to avoid modifying the original list
+        goal = self.end_point
+
+        # Function to perform Greedy Best-First Search between two points
+        def search_between_points(start, end):
+            frontier = []
+            heapq.heappush(frontier, (0, start))  # Priority is just the heuristic
+            came_from = {start: None}
+            cost_so_far = {start: 0}
+
+            while frontier:
+                current = heapq.heappop(frontier)[1]
+
+                if current == end:
+                    break
+
+                for next in self._neighbors(current):
+                    if current[0] != next[0] and current[1] != next[1]:  # Diagonal move
+                        new_cost = cost_so_far[current] + 1.5
+                    else:  # Straight move
+                        new_cost = cost_so_far[current] + 1
+
+                    if next not in came_from or new_cost < cost_so_far.get(next, float('inf')):  # Check for better path
+                        cost_so_far[next] = new_cost
+                        priority = self._heuristic(next, end)
+                        heapq.heappush(frontier, (priority, next))
+                        came_from[next] = current
+
+            if end not in came_from:
+                return None, float('inf')
+
+            return self._reconstruct_path(came_from, start, end), cost_so_far.get(end, float('inf'))
+
+        # Check if there are any stop points left
+        if not stops:
+            # If there are no stop points, just find a path from start to end
+            return search_between_points(current_start, goal)
+
+        while stops:
+            next_stop = self._find_nearest_stop(current_start, stops)
+            path, cost = search_between_points(current_start, next_stop)
+            if path is None:  # Path not found
+                return None, float('inf')
+            total_cost += cost
+            path_to_goal.extend(path[:-1])  # Exclude the last point to avoid duplication
+            current_start = next_stop
+            stops.remove(next_stop)
+
+        # Finally, go to the goal
+        final_path, final_cost = search_between_points(current_start, goal)
+        if final_path is None:
+            return None, float('inf')
+        total_cost += final_cost
+        path_to_goal.extend(final_path)
+
+        return path_to_goal, total_cost
 
     def breadth_first_search(self):
         start, goal = self.start_point, self.end_point
@@ -462,36 +536,6 @@ class Map:
         return path, cost_so_far.get(goal, float('inf'))  # Return the path and its cost
 
 
-    def depth_first_search(self):
-        start, goal = self.start_point, self.end_point
-        frontier = [start]  # Use a list as a stack for DFS
-        came_from = {start: None}
-        cost_so_far = {start: 0}  # Track the cost to reach each node
-
-        while frontier:
-            current = frontier.pop()  # LIFO stack
-
-            if current == goal:
-                break
-
-            for next in self._neighbors(current):
-                # Determine if the move is diagonal or straight
-                if current[0] != next[0] and current[1] != next[1]:  # Diagonal move
-                    new_cost = cost_so_far[current] + 1.5
-                else:  # Straight move
-                    new_cost = cost_so_far[current] + 1
-
-                if next not in came_from or new_cost < cost_so_far.get(next, float('inf')):
-                    frontier.append(next)
-                    came_from[next] = current
-                    cost_so_far[next] = new_cost  # Update cost with diagonal consideration
-
-        if goal in came_from:
-            return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]  # Return the path and total cost
-        else:
-            return None, float('inf')  # No path found
-
-        
     def move_polygons(self):
         directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # Four possible directions (right, up, left, down)
         for polygon in self.polygons:
@@ -530,7 +574,6 @@ class Map:
                     return True  # Collision detected
         return False
 
-    
     def _critical_points_not_enclosed(self, new_polygon):
         """Check that start_point, end_point, and stops are not inside the new position of the moving polygon or any other polygon."""
         critical_points = [self.start_point, self.end_point] + self.stops
@@ -541,7 +584,6 @@ class Map:
                 if polygon.is_on_edge_or_inside_polygon(point):
                     return False  # A critical point is inside another polygon
         return True
-    
 
     def _redraw_map(self):
         """Clear and redraw the map based on the current positions of polygons and other entities."""
@@ -554,4 +596,3 @@ class Map:
         for polygon in self.polygons:
             polygon.polygon_path = []
             polygon.draw(self.matrix)
-            
