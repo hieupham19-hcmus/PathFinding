@@ -9,8 +9,7 @@ def main():
     visualizer = Visualizer(map_instance)
     a_star = AStarSearch(map_instance, visualizer).a_star_search()
 
-
-
+    visualizer.run_event_loop()
 
 if __name__ == "__main__":
     main()

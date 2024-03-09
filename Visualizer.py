@@ -78,7 +78,7 @@ class Visualizer:
             pygame.time.delay(100)  # Continue checking for events with a slight delay to reduce CPU usage
 
         pygame.quit()  # Cleanup and close the window once the loop is exited
-        sys.exit()  # Exit the program
+
 
     def visualize_search_step(self, open_set, closed_set, current_path):
         # Fill the screen to clear old visuals
@@ -109,3 +109,15 @@ class Visualizer:
         rect = pygame.Rect(x * self.cell_size, (self.map.height - 1 - y) * self.cell_size, self.cell_size,
                            self.cell_size)
         pygame.draw.rect(self.screen, color, rect)
+
+    def run_event_loop(self):
+        # Main loop to keep the window open
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                # Add more conditions here for other interactions (e.g., key presses)
+
+        pygame.quit()
+        sys.exit()
