@@ -1,5 +1,8 @@
 import numpy as np
 import heapq
+import tkinter as tk
+import random
+
 
 
 class Polygon:
@@ -8,6 +11,9 @@ class Polygon:
         self.polygon_path = []  # [(x, y) for x, y in points]
         self.edge_char = edge_char
         self.direction = direction
+        #randomly select a color
+        self.color = "#%06x" % random.randint(0, 0xFFFFFF)
+
 
     def _draw_line(self, matrix, p1, p2):
         # Bresenham's line algorithm
@@ -138,6 +144,44 @@ class Map:
         self.matrix = []
         self.start_point = (0, 0)
         self.end_point = (0, 0)
+        self.search_steps = 0
+
+
+    def draw_with_tkinter(self):
+        window = tk.Tk()
+        window.title("Search Path Visualization")
+        canvas_size = 600  # Adjust as needed
+        cell_size = canvas_size // max(self.width, self.height)
+        canvas = tk.Canvas(window, width=self.width*cell_size, height=self.height*cell_size, bg="white")
+        canvas.pack()
+
+        for y in range(self.height):
+            for x in range(self.width):
+                cell = self.matrix[y][x]
+                color = "white"
+                if cell == '#':  # Obstacle
+                    color = "black"
+                elif cell == 'X':  # Path
+                    color = "blue"
+                elif cell == 'S':  # Start
+                    color = "red"
+                elif cell == 'G':  # Goal
+                    color = "green"
+                elif cell == 'B':  # Stops
+                    color = "yellow"
+                # Each polygon can be assigned a unique color
+
+                for polygon in self.polygons:
+                    if (x, y) in polygon.polygon_path:
+                        color = polygon.color
+
+
+
+
+                canvas.create_rectangle(x*cell_size, (self.height-y-1)*cell_size,
+                                        (x+1)*cell_size, (self.height-y)*cell_size, fill=color)
+
+        window.mainloop()
 
     def get_input_from_file(self, file_name) -> True:
         with open(file_name, 'r') as file:

@@ -3,9 +3,10 @@ from Map import Map
 def main():
     map = Map()
     map.get_input_from_file('input.txt')
-    
-    print(map.greedy_best_first_search_with_stops())
-    map.print_map()
+    for i in range(5):
+        map.move_polygons()
+    print(map.a_star_search())
+    map.draw_with_tkinter()
     
 if __name__ == '__main__':
     main()
