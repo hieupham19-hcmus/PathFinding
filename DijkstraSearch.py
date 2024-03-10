@@ -11,7 +11,17 @@ class DijkstraSearch:
         if current[0] != next[0] and current[1] != next[1]:  # Diagonal move
             return 1.5
         return 1  # Straight move
-
+    def _reconstruct_path(self, came_from, start, goal):
+            current = goal
+            path = []
+            while current != start:
+                if current not in self.map_instance.stops:
+                    self.map_instance.matrix[current[1]][current[0]] = 'X'
+                path.append(current)
+                current = came_from[current]
+            path.append(start)
+            path.reverse()
+            return path
     def _neighbors(self, point):
         dirs = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (1, -1), (-1, -1), (-1, 1)]  # Including diagonals
         result = []
@@ -41,9 +51,12 @@ class DijkstraSearch:
         heapq.heappush(frontier, (0, start))
         came_from = {start: None}
         cost_so_far = {start: 0}
-
+        # Visualization: Initialize open and closed sets for visualizer
+        open_set = set([start])
+        closed_set = set()
         while frontier:
             current_cost, current = heapq.heappop(frontier)
+            closed_set.add(current)
 
             if current == goal:
                 break
@@ -54,8 +67,12 @@ class DijkstraSearch:
                     cost_so_far[next] = new_cost
                     heapq.heappush(frontier, (new_cost, next))
                     came_from[next] = current
-                    # Cập nhật trực tiếp đường đi trên đồ thị (nếu cần)
-
+                    open_set.add(next)
+                    
+            # Visualization: Update visualizer with current open and closed sets
+            if self.visualizer:
+                self.visualizer.visualize_search_step(list(open_set), list(closed_set), [])
+        
         if goal not in came_from:
             return None, float('inf')
 
@@ -67,15 +84,12 @@ class DijkstraSearch:
             current = came_from[current]
         path.append(start)
         path.reverse()
+        if self.visualizer:
+            self.visualizer.update_visualization(path)
         return path, cost_so_far[goal]
 
-    def dijkstra_search_with_stops(self):
-        total_path = []
-        total_cost = 0
-        current_position = self.map_instance.start_point
-        stops_remaining = self.map_instance.stops.copy()
 
-        def find_and_path_to_nearest_stop(current_position, stops_remaining):
+    def find_and_path_to_nearest_stop(self,current_position, stops_remaining):
             nearest_stop = None
             shortest_path = None
             shortest_path_cost = float('inf')
@@ -86,19 +100,27 @@ class DijkstraSearch:
                     shortest_path = path
                     shortest_path_cost = cost
             return nearest_stop, shortest_path, shortest_path_cost
+        
+    def dijkstra_search(self):
+        total_path = []
+        total_cost = 0
+        current_position = self.map_instance.start_point
+        stops = self.map_instance.stops.copy()
+        goal = self.map_instance.end_point
+        
 
-        while stops_remaining:
-            nearest_stop, path_to_stop, cost_to_stop = find_and_path_to_nearest_stop(current_position,
-                                                                                     stops_remaining)
+        while stops:
+            nearest_stop, path_to_stop, cost_to_stop = self.find_and_path_to_nearest_stop(current_position,
+                                                                                     stops)
             if path_to_stop is None:
                 return None, float('inf')  # Path not found to one of the stops
             total_cost += cost_to_stop
             total_path.extend(path_to_stop[:-1])  # Exclude the last point to avoid duplication
             current_position = nearest_stop
-            stops_remaining.remove(nearest_stop)
+            stops.remove(nearest_stop)
 
         # Add final leg from last stop to end point
-        final_path, final_cost = self.dijkstra_search_between_points(current_position, self.end_point)
+        final_path, final_cost = self.dijkstra_search_between_points(current_position, goal)
         if final_path is None:
             return None, float('inf')  # Path not found from last stop to end point
         total_cost += final_cost
@@ -106,5 +128,6 @@ class DijkstraSearch:
 
         # Now that the complete path is determined, mark it on the graph
         self._mark_path_on_graph(total_path)
-
+        if self.visualizer:
+            self.visualizer.update_visualization(total_path)
         return total_path, total_cost

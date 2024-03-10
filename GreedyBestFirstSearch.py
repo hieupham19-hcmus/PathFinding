@@ -16,12 +16,9 @@ class GreedyBestFirstSearch:
         current = goal
         path = []
         while current != start:
-            if current not in self.map_instance.stops:  # Include only non-stop points in the path
-                if self.map_instance.matrix[current[1]][current[0]] != 'G' and self.map_instance.matrix[current[1]][
-                    current[0]] != 'S' and \
-                        self.map_instance.matrix[current[1]][current[0]] != 'B':
-                    self.map_instance.matrix[current[1]][current[0]] = 'X'  # Mark the path on the map
-                path.append(current)
+            if current not in self.map_instance.stops:  # Include only non-stop points in the path\
+                self.map_instance.matrix[current[1]][current[0]] = 'X'  # Mark the path on the map
+            path.append(current)
             current = came_from[current]
         path.append(start)  # Include the start point in the path
         path.reverse()  # Reverse the path to have it in correct order
@@ -47,14 +44,48 @@ class GreedyBestFirstSearch:
                 if not intersects_polygon:
                     result.append(next_point)
         return result
+    def search_between_points(self,start, goal):
+                frontier = []
+                heapq.heappush(frontier, (0, start))  # Priority is just the heuristic
+                came_from = {start: None}
+                cost_so_far = {start: 0}
 
+                # Visualization: Initialize open and closed sets for visualizer
+                open_set = set([start])
+                closed_set = set()
+                while frontier:
+                    current = heapq.heappop(frontier)[1]
+                    closed_set.add(current)
+
+                    if current == goal:
+                        break
+
+                    for next in self._neighbors(current):
+                        new_cost = cost_so_far[current] + self._move_cost(current, next)
+
+
+                        if next not in came_from or new_cost < cost_so_far.get(next, float('inf')):  # Check for better path
+                            cost_so_far[next] = new_cost
+                            priority = self._heuristic(next, goal)
+                            heapq.heappush(frontier, (priority, next))
+                            came_from[next] = current
+                            open_set.add(next)
+                    # Visualization: Update visualizer with current open and closed sets
+                    if self.visualizer:
+                        self.visualizer.visualize_search_step(list(open_set), list(closed_set), [])
+                
+                
+                path = self._reconstruct_path(came_from, start, goal)
+                if self.visualizer:
+                    self.visualizer.update_visualization(path)
+                return path, cost_so_far.get(goal, float('inf'))
     def _find_nearest_stop(self, current, stop_points):
         """Find the nearest stop point to the current point based on heuristic."""
         # This is a simplified version, in practice, you might calculate the actual distance or a heuristic value
         nearest_stop = min(stop_points, key=lambda stop: self._heuristic(current, stop))
         return nearest_stop
 
-    def greedy_best_first_search_with_stops(self):
+    def greedy_best_first_search(self):
         """
         Modified Greedy Best-First Search to include mandatory stops before reaching the final goal.
         """
@@ -65,43 +96,11 @@ class GreedyBestFirstSearch:
         goal = self.map_instance.end_point
 
         # Function to perform Greedy Best-First Search between two points
-        def search_between_points(start, end):
-            frontier = []
-            heapq.heappush(frontier, (0, start))  # Priority is just the heuristic
-            came_from = {start: None}
-            cost_so_far = {start: 0}
-
-            while frontier:
-                current = heapq.heappop(frontier)[1]
-
-                if current == end:
-                    break
-
-                for next in self._neighbors(current):
-                    if current[0] != next[0] and current[1] != next[1]:  # Diagonal move
-                        new_cost = cost_so_far[current] + 1.5
-                    else:  # Straight move
-                        new_cost = cost_so_far[current] + 1
-
-                    if next not in came_from or new_cost < cost_so_far.get(next, float('inf')):  # Check for better path
-                        cost_so_far[next] = new_cost
-                        priority = self._heuristic(next, end)
-                        heapq.heappush(frontier, (priority, next))
-                        came_from[next] = current
-
-            if end not in came_from:
-                return None, float('inf')
-
-            return self._reconstruct_path(came_from, start, end), cost_so_far.get(end, float('inf'))
-
-        # Check if there are any stop points left
-        if not stops:
-            # If there are no stop points, just find a path from start to end
-            return search_between_points(current_start, goal)
+        
 
         while stops:
             next_stop = self._find_nearest_stop(current_start, stops)
-            path, cost = search_between_points(current_start, next_stop)
+            path, cost = self.search_between_points(current_start, next_stop)
             if path is None:  # Path not found
                 return None, float('inf')
             total_cost += cost
@@ -110,10 +109,11 @@ class GreedyBestFirstSearch:
             stops.remove(next_stop)
 
         # Finally, go to the goal
-        final_path, final_cost = search_between_points(current_start, goal)
+        final_path, final_cost = self.search_between_points(current_start, goal)
         if final_path is None:
             return None, float('inf')
         total_cost += final_cost
         path_to_goal.extend(final_path)
-
+        if self.visualizer:
+            self.visualizer.update_visualization(path_to_goal)
         return path_to_goal, total_cost
