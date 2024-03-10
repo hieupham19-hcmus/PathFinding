@@ -50,7 +50,7 @@ class Map:
                 # return False
 
         for polygon in self.polygons:
-            if (polygon.is_on_edge_or_inside_polygon(self.start_point) or polygon.is_on_edge_or_inside_polygon(
+            if (polygon._is_on_edge_or_inside_polygon(self.start_point) or polygon._is_on_edge_or_inside_polygon(
                     self.end_point)):
                 raise ValueError("Error: Start and end points are not outside of polygons.")
                 # print("")
@@ -75,7 +75,7 @@ class Map:
         # Check if any point of the new polygon is inside an existing polygon
         for point in temp_polygon.points:
             for existing_polygon in self.polygons:
-                if existing_polygon.is_on_edge_or_inside_polygon(point):
+                if existing_polygon._is_on_edge_or_inside_polygon(point):
                     raise ValueError("A point of the new polygon is inside an existing polygon.")
 
         # If no intersections or inside points, add the polygon to the map
@@ -86,18 +86,18 @@ class Map:
         for row in self.matrix[::-1]:
             print(''.join(row))
 
-    def move_polygons(self):
+    def move_polygons(self, path):
         directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # Four possible directions (right, up, left, down)
         for polygon in self.polygons:
-            # Try to move the polygon in a random direction
             valid_move_found = False
             np.random.shuffle(directions)  # Shuffle directions to try them in random order
             original_points = polygon.points[:]
             for direction in directions:
                 new_points = [(x + direction[0], y + direction[1]) for x, y in original_points]
-                # Check if new position is within bounds, does not collide with other polygons,
-                # and does not enclose critical points
-                if self._is_valid_move(new_points) and not self._collides_with_other_polygons(new_points, polygon):
+                # Check if the move is valid and does not result in collision or enclosing critical points
+                if (self._is_valid_move(new_points) and
+                    not self._collides_with_other_polygons(new_points, polygon) and
+                    not self._path_intersects(new_points, path)):
                     temp_polygon = Polygon(new_points)
                     if self._critical_points_not_enclosed(temp_polygon):
                         polygon.points = new_points
@@ -107,8 +107,14 @@ class Map:
                 # If no valid move is found, the polygon does not move
                 pass
 
-        # Redraw the map with updated polygon positions
         self._redraw_map()
+
+    def _path_intersects(self, points, path):
+        """Check if any of the new points of the polygon are on the current path."""
+        for point in points:
+            if point in path:
+                return True
+        return False
 
     def _is_valid_move(self, points):
         """Check if the new position of a polygon is within the map boundaries."""
@@ -120,7 +126,7 @@ class Map:
             if polygon == moving_polygon:
                 continue  # Skip the moving polygon itself
             for point in new_points:
-                if polygon.is_on_edge_or_inside_polygon(point):
+                if polygon._is_on_edge_or_inside_polygon(point):
                     return True  # Collision detected
         return False
 
@@ -128,10 +134,10 @@ class Map:
         """Check that start_point, end_point, and stops are not inside the new position of the moving polygon or any other polygon."""
         critical_points = [self.start_point, self.end_point] + self.stops
         for point in critical_points:
-            if new_polygon.is_on_edge_or_inside_polygon(point):
+            if new_polygon._is_on_edge_or_inside_polygon(point):
                 return False  # A critical point is inside the new polygon
             for polygon in self.polygons:
-                if polygon.is_on_edge_or_inside_polygon(point):
+                if polygon._is_on_edge_or_inside_polygon(point):
                     return False  # A critical point is inside another polygon
         return True
 

@@ -69,7 +69,7 @@ class Polygon:
         return (max(p[0], r[0]) >= q[0] >= min(p[0], r[0]) and
                 max(p[1], r[1]) >= q[1] >= min(p[1], r[1]))
 
-    def is_on_edge_or_inside_polygon(self, point):
+    def _is_on_edge_or_inside_polygon(self, point):
         """Check if a point is on the edge of or inside the polygon."""
         # Check if the point is on any of the polygon's edges
         for i in range(len(self.points)):

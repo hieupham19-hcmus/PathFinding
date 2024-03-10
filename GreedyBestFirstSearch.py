@@ -45,40 +45,38 @@ class GreedyBestFirstSearch:
                     result.append(next_point)
         return result
     def search_between_points(self,start, goal):
-                frontier = []
-                heapq.heappush(frontier, (0, start))  # Priority is just the heuristic
-                came_from = {start: None}
-                cost_so_far = {start: 0}
+        frontier = []
+        heapq.heappush(frontier, (0, start))  # Priority is just the heuristic
+        came_from = {start: None}
+        cost_so_far = {start: 0}
 
-                # Visualization: Initialize open and closed sets for visualizer
-                open_set = set([start])
-                closed_set = set()
-                while frontier:
-                    current = heapq.heappop(frontier)[1]
-                    closed_set.add(current)
+        # Visualization: Initialize open and closed sets for visualizer
+        open_set = set([start])
+        closed_set = set()
+        while frontier:
+            current = heapq.heappop(frontier)[1]
+            closed_set.add(current)
 
-                    if current == goal:
-                        break
+            if current == goal:
+                break
 
-                    for next in self._neighbors(current):
-                        new_cost = cost_so_far[current] + self._move_cost(current, next)
+            for next in self._neighbors(current):
+                new_cost = cost_so_far[current] + self._move_cost(current, next)
 
+                if next not in came_from or new_cost < cost_so_far.get(next, float('inf')):  # Check for better path
+                    cost_so_far[next] = new_cost
+                    priority = self._heuristic(next, goal)
+                    heapq.heappush(frontier, (priority, next))
+                    came_from[next] = current
+                    open_set.add(next)
+            # Visualization: Update visualizer with current open and closed sets
+            if self.visualizer:
+                self.visualizer.visualize_search_step(list(open_set), list(closed_set), [])
 
-                        if next not in came_from or new_cost < cost_so_far.get(next, float('inf')):  # Check for better path
-                            cost_so_far[next] = new_cost
-                            priority = self._heuristic(next, goal)
-                            heapq.heappush(frontier, (priority, next))
-                            came_from[next] = current
-                            open_set.add(next)
-                    # Visualization: Update visualizer with current open and closed sets
-                    if self.visualizer:
-                        self.visualizer.visualize_search_step(list(open_set), list(closed_set), [])
-                
-                
-                path = self._reconstruct_path(came_from, start, goal)
-                if self.visualizer:
-                    self.visualizer.update_visualization(path)
-                return path, cost_so_far.get(goal, float('inf'))
+        path = self._reconstruct_path(came_from, start, goal)
+        if self.visualizer:
+            self.visualizer.update_visualization(path)
+        return path, cost_so_far.get(goal, float('inf'))
     def _find_nearest_stop(self, current, stop_points):
         """Find the nearest stop point to the current point based on heuristic."""
         # This is a simplified version, in practice, you might calculate the actual distance or a heuristic value

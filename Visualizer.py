@@ -4,14 +4,17 @@ import sys
 from Map import Map
 
 class Visualizer:
-    def __init__(self, map_obj):
+    def __init__(self, map_obj, preferred_window_size=(800, 600)):
         pygame.init()
         self.map = map_obj
-        self.width = 800  # Window width
-        self.height = 600  # Window height
-        self.cell_size = min(self.width // self.map.width, self.height // self.map.height)
+        self.cell_size = min(preferred_window_size[0] // self.map.width, preferred_window_size[1] // self.map.height)
+        # Set the width and height of the screen to exactly fit the map dimensions
+        self.width = self.map.width * self.cell_size
+        self.height = self.map.height * self.cell_size
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Pathfinding Visualizer')
+        self.clock = pygame.time.Clock()  # For frame rate limiting
+        self.dirty_rects = []
         self.font = pygame.font.SysFont(None, 24)  # Font for text
         self.paused = False  # New attribute to control pause/resume
 
@@ -52,9 +55,20 @@ class Visualizer:
             self.screen.blit(text, (5, (self.map.height - 1 - y) * self.cell_size + 5))
 
     def update_visualization(self, path=None):
+        # Mark the entire screen as "dirty" for the first update
+        if not self.dirty_rects:
+            self.dirty_rects.append(pygame.Rect(0, 0, self.width, self.height))
+
+        # Clear dirty regions
+        for rect in self.dirty_rects:
+            self.screen.fill((220, 220, 220), rect)  # Fill with background color
+            pygame.display.update(rect)
+
+        # Reset dirty regions for the next frame
+        self.dirty_rects.clear()
         self.screen.fill((220, 220, 220))  # Light gray background
         self.draw_grid()
-        self.draw_labels()
+        #self.draw_labels()
         if path:
             for x, y in path:
                 rect = pygame.Rect(x * self.cell_size, (self.map.height - 1 - y) * self.cell_size,  # Invert y-axis
@@ -75,7 +89,7 @@ class Visualizer:
             if not self.paused:
                 self.update_visualization()
 
-            pygame.time.delay(100)  # Continue checking for events with a slight delay to reduce CPU usage
+            pygame.time.delay(10)  # Continue checking for events with a slight delay to reduce CPU usage
 
         pygame.quit()  # Cleanup and close the window once the loop is exited
 
@@ -86,7 +100,7 @@ class Visualizer:
 
         # Draw the grid and labels
         self.draw_grid()
-        self.draw_labels()
+        #self.draw_labels()
 
         # Visualize the open set
         for node in open_set:
@@ -111,13 +125,22 @@ class Visualizer:
         pygame.draw.rect(self.screen, color, rect)
 
     def run_event_loop(self):
-        # Main loop to keep the window open
         running = True
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                # Add more conditions here for other interactions (e.g., key presses)
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self.paused = not self.paused
 
-        pygame.quit()
+            if not self.paused:
+                # Do pathfinding steps and visualization updates here
+                # Remember to add modified regions to self.dirty_rects
+                pass
+
+            self.clock.tick(60)  # Limit to 60 FPS
+            pygame.display.flip()
+#
+        pygame.quit()  # Cleanup and close the window once the loop is exited
         sys.exit()
