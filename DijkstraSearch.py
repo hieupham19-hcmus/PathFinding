@@ -1,5 +1,5 @@
 import heapq
-
+import random
 
 class DijkstraSearch:
     def __init__(self, map_instance, visualizer=None):
@@ -51,12 +51,9 @@ class DijkstraSearch:
         heapq.heappush(frontier, (0, start))
         came_from = {start: None}
         cost_so_far = {start: 0}
-        # Visualization: Initialize open and closed sets for visualizer
-        open_set = set([start])
-        closed_set = set()
+      
         while frontier:
             current_cost, current = heapq.heappop(frontier)
-            closed_set.add(current)
 
             if current == goal:
                 break
@@ -67,11 +64,8 @@ class DijkstraSearch:
                     cost_so_far[next] = new_cost
                     heapq.heappush(frontier, (new_cost, next))
                     came_from[next] = current
-                    open_set.add(next)
                     
-            # Visualization: Update visualizer with current open and closed sets
-            if self.visualizer:
-                self.visualizer.visualize_search_step(list(open_set), list(closed_set), [])
+
         
         if goal not in came_from:
             return None, float('inf')
@@ -84,24 +78,31 @@ class DijkstraSearch:
             current = came_from[current]
         path.append(start)
         path.reverse()
-        if self.visualizer:
-            self.visualizer.update_visualization(path)
+  
         return path, cost_so_far[goal]
 
+    def find_best_path(self,current_start, stops, goal, path_to_goal=[], total_cost=0, best_result=[float('inf'), []]):
 
-    def find_and_path_to_nearest_stop(self,current_position, stops_remaining):
-            nearest_stop = None
-            shortest_path = None
-            shortest_path_cost = float('inf')
-            for stop in stops_remaining:
-                path, cost = self.dijkstra_search_between_points(current_position, stop)
-                if cost < shortest_path_cost:
-                    nearest_stop = stop
-                    shortest_path = path
-                    shortest_path_cost = cost
-            return nearest_stop, shortest_path, shortest_path_cost
+        if not stops:
+            # Khi không còn điểm dừng, tính toán chi phí đến điểm kết thúc và cập nhật kết quả tốt nhất nếu cần
+            final_path, final_cost = self.dijkstra_search_between_points(current_start, goal)
+            total_cost += final_cost
+            if total_cost < best_result[0]:
+                best_result[0] = total_cost
+                best_result[1] = path_to_goal + final_path
+        else:
+            for i, stop in enumerate(stops):
+                next_stops = stops[:i] + stops[i+1:]
+                path, cost = self.dijkstra_search_between_points(current_start, stop)
+                if total_cost + cost >= best_result[0]:
+                    continue
+                # Gọi đệ quy với điểm dừng tiếp theo và cập nhật đường đi và tổng chi phí
+                self.find_best_path(stop, next_stops, goal, path_to_goal + path, total_cost + cost, best_result)
+
+    
         
     def dijkstra_search(self):
+        self.visualizer.draw_grid()
         total_path = []
         total_cost = 0
         current_position = self.map_instance.start_point
@@ -109,25 +110,14 @@ class DijkstraSearch:
         goal = self.map_instance.end_point
         
 
-        while stops:
-            nearest_stop, path_to_stop, cost_to_stop = self.find_and_path_to_nearest_stop(current_position,
-                                                                                     stops)
-            if path_to_stop is None:
-                return None, float('inf')  # Path not found to one of the stops
-            total_cost += cost_to_stop
-            total_path.extend(path_to_stop[:-1])  # Exclude the last point to avoid duplication
-            current_position = nearest_stop
-            stops.remove(nearest_stop)
+        
 
-        # Add final leg from last stop to end point
-        final_path, final_cost = self.dijkstra_search_between_points(current_position, goal)
-        if final_path is None:
-            return None, float('inf')  # Path not found from last stop to end point
-        total_cost += final_cost
-        total_path.extend(final_path)
+        best_result = [float('inf'), []]  # This sets up best_result with an initial infinite cost and an empty path.
+        self.find_best_path(current_position,stops,goal,total_path,total_cost,best_result=best_result)
 
-        # Now that the complete path is determined, mark it on the graph
-        self._mark_path_on_graph(total_path)
+        # path_to_goal.extend(final_path)
         if self.visualizer:
-            self.visualizer.update_visualization(total_path)
-        return total_path, total_cost
+            random_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            self.visualizer.update_visualization(random_color,best_result[1])
+      
+        return best_result[1], best_result[0]

@@ -1,6 +1,6 @@
 import pygame
 import sys
-
+import random  
 from Map import Map
 
 class Visualizer:
@@ -54,27 +54,24 @@ class Visualizer:
             text = self.font.render(str(y), True, (0, 0, 0))
             self.screen.blit(text, (5, (self.map.height - 1 - y) * self.cell_size + 5))
 
-    def update_visualization(self, path=None):
-        # Mark the entire screen as "dirty" for the first update
-        if not self.dirty_rects:
-            self.dirty_rects.append(pygame.Rect(0, 0, self.width, self.height))
+    def update_visualization(self, random_color, path=None):
+     
 
-        # Clear dirty regions
-        for rect in self.dirty_rects:
-            self.screen.fill((220, 220, 220), rect)  # Fill with background color
-            pygame.display.update(rect)
-
-        # Reset dirty regions for the next frame
-        self.dirty_rects.clear()
-        self.screen.fill((220, 220, 220))  # Light gray background
-        self.draw_grid()
-        #self.draw_labels()
         if path:
             for x, y in path:
-                rect = pygame.Rect(x * self.cell_size, (self.map.height - 1 - y) * self.cell_size,  # Invert y-axis
-                                   self.cell_size, self.cell_size)
-                pygame.draw.rect(self.screen, (255, 255, 0), rect)  # Path - Yellow
-        pygame.display.flip()
+                # Calculate rectangle for path cell
+                rect = pygame.Rect(x * self.cell_size, (self.map.height - 1 - y) * self.cell_size, self.cell_size, self.cell_size)
+                # Draw the path cell
+                pygame.draw.rect(self.screen, random_color, rect)
+                # Add the rectangle to the dirty_rects list to update just this part
+                self.dirty_rects.append(rect)
+
+        # Update only the rectangles that have changed in this frame.
+        pygame.display.update(self.dirty_rects)
+
+        # Clear the list of dirty rectangles so that only new changes are updated next frame.
+        self.dirty_rects.clear()
+
 
     def run_visualization(self):
         running = True

@@ -1,5 +1,6 @@
 import numpy as np
 import heapq
+import random
 
 class GreedyBestFirstSearch:
     def __init__(self, map_instance, visualizer=None):
@@ -50,12 +51,9 @@ class GreedyBestFirstSearch:
         came_from = {start: None}
         cost_so_far = {start: 0}
 
-        # Visualization: Initialize open and closed sets for visualizer
-        open_set = set([start])
-        closed_set = set()
+      
         while frontier:
             current = heapq.heappop(frontier)[1]
-            closed_set.add(current)
 
             if current == goal:
                 break
@@ -68,22 +66,33 @@ class GreedyBestFirstSearch:
                     priority = self._heuristic(next, goal)
                     heapq.heappush(frontier, (priority, next))
                     came_from[next] = current
-                    open_set.add(next)
-            # Visualization: Update visualizer with current open and closed sets
-            if self.visualizer:
-                self.visualizer.visualize_search_step(list(open_set), list(closed_set), [])
+         
 
         path = self._reconstruct_path(came_from, start, goal)
-        if self.visualizer:
-            self.visualizer.update_visualization(path)
+        
         return path, cost_so_far.get(goal, float('inf'))
-    def _find_nearest_stop(self, current, stop_points):
-        """Find the nearest stop point to the current point based on heuristic."""
-        # This is a simplified version, in practice, you might calculate the actual distance or a heuristic value
-        nearest_stop = min(stop_points, key=lambda stop: self._heuristic(current, stop))
-        return nearest_stop
+    
+    def find_best_path(self,current_start, stops, goal, path_to_goal=[], total_cost=0, best_result=[float('inf'), []]):
+
+        if not stops:
+            # Khi không còn điểm dừng, tính toán chi phí đến điểm kết thúc và cập nhật kết quả tốt nhất nếu cần
+            final_path, final_cost = self.search_between_points(current_start, goal)
+            total_cost += final_cost
+            if total_cost < best_result[0]:
+                best_result[0] = total_cost
+                best_result[1] = path_to_goal + final_path
+        else:
+            for i, stop in enumerate(stops):
+                next_stops = stops[:i] + stops[i+1:]
+                path, cost = self.search_between_points(current_start, stop)
+                if total_cost + cost >= best_result[0]:
+                    continue
+                # Gọi đệ quy với điểm dừng tiếp theo và cập nhật đường đi và tổng chi phí
+                self.find_best_path(stop, next_stops, goal, path_to_goal + path, total_cost + cost, best_result)
 
     def greedy_best_first_search(self):
+        self.visualizer.draw_grid()
+
         """
         Modified Greedy Best-First Search to include mandatory stops before reaching the final goal.
         """
@@ -96,22 +105,14 @@ class GreedyBestFirstSearch:
         # Function to perform Greedy Best-First Search between two points
         
 
-        while stops:
-            next_stop = self._find_nearest_stop(current_start, stops)
-            path, cost = self.search_between_points(current_start, next_stop)
-            if path is None:  # Path not found
-                return None, float('inf')
-            total_cost += cost
-            path_to_goal.extend(path[:-1])  # Exclude the last point to avoid duplication
-            current_start = next_stop
-            stops.remove(next_stop)
+        
 
-        # Finally, go to the goal
-        final_path, final_cost = self.search_between_points(current_start, goal)
-        if final_path is None:
-            return None, float('inf')
-        total_cost += final_cost
-        path_to_goal.extend(final_path)
+        best_result = [float('inf'), []]  # This sets up best_result with an initial infinite cost and an empty path.
+        self.find_best_path(current_start,stops,goal,path_to_goal,total_cost,best_result=best_result)
+
+        # path_to_goal.extend(final_path)
         if self.visualizer:
-            self.visualizer.update_visualization(path_to_goal)
-        return path_to_goal, total_cost
+            random_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            self.visualizer.update_visualization(random_color,best_result[1])
+      
+        return best_result[1], best_result[0]

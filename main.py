@@ -15,10 +15,10 @@ def main():
     clock = pygame.time.Clock()
     clock.tick(60)
 
-    #a_star = AStarSearch(map_instance, visualizer).a_star_search()
-    #gbfs=GreedyBestFirstSearch(map_instance,visualizer).greedy_best_first_search()
-    #dijkstra = DijkstraSearch(map_instance,visualizer).dijkstra_search()
-    test = AStarDynamic(map_instance, visualizer,1).a_star_search()
+    # a_star = AStarSearch(map_instance, visualizer).a_star_search()
+    # gbfs=GreedyBestFirstSearch(map_instance,visualizer).greedy_best_first_search()
+    dijkstra = DijkstraSearch(map_instance,visualizer).dijkstra_search()
+    # test = AStarDynamic(map_instance, visualizer,1).a_star_search()
     visualizer.run_event_loop()
 
 if __name__ == "__main__":

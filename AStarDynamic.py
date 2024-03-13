@@ -65,10 +65,13 @@ class AStarDynamic:
         path_to_goal = []
         total_cost = 0
         current = self.map_instance.start_point
+        goal = self.map_instance.end_point
 
         while current != self.map_instance.end_point:
             # Attempt to find a path to the next stop or the goal
             path, cost = self._search_between_points(current, self.map_instance.end_point, path_to_goal)
+            
+
             total_cost += cost
 
             if path:
