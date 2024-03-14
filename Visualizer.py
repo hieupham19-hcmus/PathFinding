@@ -4,25 +4,36 @@ import random
 from Map import Map
 
 class Visualizer:
+    
     def __init__(self, map_obj, preferred_window_size=(800, 600)):
         pygame.init()
         self.map = map_obj
         self.cell_size = min(preferred_window_size[0] // self.map.width, preferred_window_size[1] // self.map.height)
+        self.top_spacing = self.cell_size * 2
         # Set the width and height of the screen to exactly fit the map dimensions
         self.width = self.map.width * self.cell_size
-        self.height = self.map.height * self.cell_size
+        self.height = self.map.height * self.cell_size + +self.top_spacing
         self.screen = pygame.display.set_mode((self.width, self.height))
+        self.screen.fill((255, 255, 255)) 
         pygame.display.set_caption('Pathfinding Visualizer')
         self.clock = pygame.time.Clock()  # For frame rate limiting
         self.dirty_rects = []
         self.font = pygame.font.SysFont(None, 24)  # Font for text
         self.paused = False  # New attribute to control pause/resume
 
+        
+
+    #def draw_header(self):
+        #hello_text = self.font.render("Total cost:", True, (255, 0, 255))  
+        #text_rect = hello_text.get_rect(center=(self.width // 2, self.top_spacing // 2))  # Position the text at the top center
+        #self.screen.blit(hello_text, text_rect)
+
     def draw_grid(self):
         for y in range(self.map.height):
             for x in range(self.map.width):
-                rect = pygame.Rect(x * self.cell_size, (self.map.height - 1 - y) * self.cell_size,  # Invert y-axis
-                                   self.cell_size, self.cell_size)
+                rect = pygame.Rect(x * self.cell_size, self.top_spacing + (self.map.height - 1 - y) * self.cell_size,
+                                   self.cell_size, self.cell_size)  # Add top_spacing
+
                 if (x, y) == self.map.start_point:
                     color = (0, 255, 0)  # Start - Green
                 elif (x, y) == self.map.end_point:
@@ -44,27 +55,33 @@ class Visualizer:
                 pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)  # Black grid lines
 
     def draw_labels(self):
-        # Draw the coordinates along the bottom
+        # Draw the coordinates along the bottom with spacing
         for x in range(self.map.width):
             text = self.font.render(str(x), True, (0, 0, 0))
-            self.screen.blit(text, (x * self.cell_size + 5, self.height - 25))
+            self.screen.blit(text, (x * self.cell_size + 5, self.height - 25 + self.top_spacing))
 
-        # Draw the coordinates along the left side
+        # Draw the coordinates along the left side with spacing
         for y in range(self.map.height):
             text = self.font.render(str(y), True, (0, 0, 0))
-            self.screen.blit(text, (5, (self.map.height - 1 - y) * self.cell_size + 5))
+            self.screen.blit(text, (5, self.top_spacing + (self.map.height - 1 - y) * self.cell_size + 5))
 
-    def update_visualization(self, random_color, path=None):
-     
-
+    def update_visualization(self, random_color, path=None, total_cost=None):
         if path:
             for x, y in path:
                 # Calculate rectangle for path cell
-                rect = pygame.Rect(x * self.cell_size, (self.map.height - 1 - y) * self.cell_size, self.cell_size, self.cell_size)
+                rect = pygame.Rect(x * self.cell_size, self.top_spacing + (self.map.height - 1 - y) * self.cell_size,
+                                self.cell_size, self.cell_size)
                 # Draw the path cell
                 pygame.draw.rect(self.screen, random_color, rect)
                 # Add the rectangle to the dirty_rects list to update just this part
                 self.dirty_rects.append(rect)
+
+        if total_cost is not None:
+            # Render the total cost text
+            cost_text = self.font.render(f"Total Cost: {total_cost}", True, (255, 0, 255))  # Render text in pink color
+            text_rect = cost_text.get_rect(center=(self.width // 2, self.top_spacing // 2))  # Position text above grid
+            text_rect.top = self.top_spacing // 2  # Adjust the top position of the text
+            self.screen.blit(cost_text, text_rect)
 
         # Update only the rectangles that have changed in this frame.
         pygame.display.update(self.dirty_rects)

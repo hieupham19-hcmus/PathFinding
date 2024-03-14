@@ -113,6 +113,6 @@ class GreedyBestFirstSearch:
         # path_to_goal.extend(final_path)
         if self.visualizer:
             random_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-            self.visualizer.update_visualization(random_color,best_result[1])
+            self.visualizer.update_visualization(random_color,best_result[1], best_result[0])
       
         return best_result[1], best_result[0]
