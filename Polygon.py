@@ -65,9 +65,16 @@ class Polygon:
         return 1 if val > 0 else 2
 
     def _on_segment(self, p, q, r):
-        """Given three collinear points p, q, and r, check if point q lies on line segment 'pr'."""
-        return (max(p[0], r[0]) >= q[0] >= min(p[0], r[0]) and
-                max(p[1], r[1]) >= q[1] >= min(p[1], r[1]))
+        """
+        Given three points p, q, and r, return True if point q lies on the line segment 'pr'
+        """
+        # Validate the input format for q
+        if not isinstance(q, (tuple, list)) or len(q) != 2:
+            raise ValueError(f"Expected point 'q' to be a tuple or list of 2 values, got {q} instead.")
+        q_x, q_y = q  # Now safe to unpack
+
+        return (max(p[0], r[0]) >= q_x >= min(p[0], r[0]) and
+                max(p[1], r[1]) >= q_y >= min(p[1], r[1]))
 
     def _is_on_edge_or_inside_polygon(self, point):
         """Check if a point is on the edge of or inside the polygon."""

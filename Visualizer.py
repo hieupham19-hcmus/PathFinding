@@ -18,7 +18,7 @@ class Visualizer:
         pygame.display.set_caption('Pathfinding Visualizer')
         self.clock = pygame.time.Clock()  # For frame rate limiting
         self.dirty_rects = []
-        self.font = pygame.font.SysFont(None, 24)  # Font for text
+        self.font = pygame.font.SysFont('Verdana', 12)  # Font for text
         self.paused = False  # New attribute to control pause/resume
 
         
@@ -108,35 +108,40 @@ class Visualizer:
         pygame.quit()  # Cleanup and close the window once the loop is exited
 
 
-    def visualize_search_step(self, open_set, closed_set, current_path):
-        # Fill the screen to clear old visuals
-        self.screen.fill((220, 220, 220))
 
-        # Draw the grid and labels
+    def visualize_after_move_polygon(self, current_path, polygons):
+        # Clear screen
+        self.screen.fill((255, 255, 255))
+
+        # Redraw the grid with static and dynamic elements
         self.draw_grid()
-        #self.draw_labels()
 
-        # Visualize the open set
-        for node in open_set:
-            self.color_cell(node, (0, 255, 255))  # Cyan for open set
 
-        # Visualize the closed set
-        for node in closed_set:
-            self.color_cell(node, (255, 165, 0))  # Orange for closed set
 
         # Visualize the current path
-        for node in current_path:
-            self.color_cell(node, (255, 255, 0))  # Yellow for current path
+        self.update_visualization_with_path(current_path)
 
-        # Update the display and wait to visualize the speed
+        # Refresh the display
         pygame.display.flip()
-        pygame.time.delay(100)  # Delay in milliseconds
 
-    def color_cell(self, cell, color):
+    def update_visualization_with_path(self, path):
+        for x, y in path:
+            rect = pygame.Rect(x * self.cell_size, self.top_spacing + (self.map.height - 1 - y) * self.cell_size,
+                               self.cell_size, self.cell_size)
+            pygame.draw.rect(self.screen, (255, 165, 0), rect)  # Orange for the path
+            self.dirty_rects.append(rect)
+
+        # Optionally update labels or other UI elements here
+        pygame.display.update(self.dirty_rects)
+        self.dirty_rects.clear()
+
+    def color_cell(self, cell, color, update_only=False):
         x, y = cell
-        rect = pygame.Rect(x * self.cell_size, (self.map.height - 1 - y) * self.cell_size, self.cell_size,
-                           self.cell_size)
-        pygame.draw.rect(self.screen, color, rect)
+        rect = pygame.Rect(x * self.cell_size, self.top_spacing + (self.map.height - 1 - y) * self.cell_size,
+                           self.cell_size, self.cell_size)
+        if not update_only or rect not in self.dirty_rects:
+            pygame.draw.rect(self.screen, color, rect)
+            self.dirty_rects.append(rect)
 
     def run_event_loop(self):
         running = True

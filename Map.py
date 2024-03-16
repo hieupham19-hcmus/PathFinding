@@ -50,8 +50,8 @@ class Map:
                 # return False
 
         for polygon in self.polygons:
-            if (polygon._is_on_edge_or_inside_polygon(self.start_point) or polygon._is_on_edge_or_inside_polygon(
-                    self.end_point)):
+            if (polygon._is_on_edge_or_inside_polygon(self.start_point) or
+                    polygon._is_on_edge_or_inside_polygon(self.end_point)):
                 raise ValueError("Error: Start and end points are not outside of polygons.")
                 # print("")
                 # return False
@@ -86,7 +86,8 @@ class Map:
         for row in self.matrix[::-1]:
             print(''.join(row))
 
-    def move_polygons(self, path):
+    # index is the index of the robot that is moving
+    def move_polygons(self, index):
         directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # Four possible directions (right, up, left, down)
         for polygon in self.polygons:
             valid_move_found = False
@@ -97,7 +98,7 @@ class Map:
                 # Check if the move is valid and does not result in collision or enclosing critical points
                 if (self._is_valid_move(new_points) and
                     not self._collides_with_other_polygons(new_points, polygon) and
-                    not self._path_intersects(new_points, path)):
+                    not self._does_not_enclose_robot(new_points, index)):
                     temp_polygon = Polygon(new_points)
                     if self._critical_points_not_enclosed(temp_polygon):
                         polygon.points = new_points
@@ -109,12 +110,20 @@ class Map:
 
         self._redraw_map()
 
-    def _path_intersects(self, points, path):
-        """Check if any of the new points of the polygon are on the current path."""
-        for point in points:
-            if point in path:
-                return True
-        return False
+    def _does_not_enclose_robot(self, new_points, robot_position):
+        # Temporarily create a new polygon with the new points to use for checking
+        temp_polygon = Polygon(new_points)
+
+        # Check if the robot's position is inside or on the edge of the new polygon
+        if temp_polygon._is_on_edge_or_inside_polygon(robot_position):
+            return False  # The robot is enclosed by the new polygon
+
+        # Ensure robot is not enclosed by any existing polygon (excluding the moving one)
+        for polygon in self.polygons:
+            if polygon._is_on_edge_or_inside_polygon(robot_position) and polygon.points != new_points:
+                return False  # The robot is enclosed by another polygon
+
+        return True  # No polygons enclose the robot
 
     def _is_valid_move(self, points):
         """Check if the new position of a polygon is within the map boundaries."""
