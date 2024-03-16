@@ -107,33 +107,55 @@ class Visualizer:
 
         pygame.quit()  # Cleanup and close the window once the loop is exited
 
-
-
-    def visualize_after_move_polygon(self, current_path, polygons):
+    def visualize_after_move_polygon(self, current_position, polygons):
         # Clear screen
         self.screen.fill((255, 255, 255))
 
         # Redraw the grid with static and dynamic elements
         self.draw_grid()
 
-
-
-        # Visualize the current path
-        self.update_visualization_with_path(current_path)
+        # Visualize the current position
+        self.update_visualization_with_current_position(current_position)
 
         # Refresh the display
         pygame.display.flip()
 
-    def update_visualization_with_path(self, path):
-        for x, y in path:
-            rect = pygame.Rect(x * self.cell_size, self.top_spacing + (self.map.height - 1 - y) * self.cell_size,
-                               self.cell_size, self.cell_size)
-            pygame.draw.rect(self.screen, (255, 165, 0), rect)  # Orange for the path
-            self.dirty_rects.append(rect)
+    def update_visualization_with_current_position(self, position):
+        # Calculate the rectangle for the current cell
+        rect = pygame.Rect(position[0] * self.cell_size,
+                           self.top_spacing + (self.map.height - 1 - position[1]) * self.cell_size,
+                           self.cell_size, self.cell_size)
+        # Draw the current cell with a distinct color, e.g., orange
+        pygame.draw.rect(self.screen, (255, 165, 0), rect)  # Orange for the current position
+        self.dirty_rects.append(rect)
 
-        # Optionally update labels or other UI elements here
+        # Update the display for only the modified region
         pygame.display.update(self.dirty_rects)
         self.dirty_rects.clear()
+
+    # def visualize_after_move_polygon(self, current_path, polygons):
+    #     # Clear screen
+    #     self.screen.fill((255, 255, 255))
+    #
+    #     # Redraw the grid with static and dynamic elements
+    #     self.draw_grid()
+    #
+    #     # Visualize the current path
+    #     self.update_visualization_with_path(current_path)
+    #
+    #     # Refresh the display
+    #     pygame.display.flip()
+    #
+    # def update_visualization_with_path(self, path):
+    #     for x, y in path:
+    #         rect = pygame.Rect(x * self.cell_size, self.top_spacing + (self.map.height - 1 - y) * self.cell_size,
+    #                            self.cell_size, self.cell_size)
+    #         pygame.draw.rect(self.screen, (255, 165, 0), rect)  # Orange for the path
+    #         self.dirty_rects.append(rect)
+    #
+    #     # Optionally update labels or other UI elements here
+    #     pygame.display.update(self.dirty_rects)
+    #     self.dirty_rects.clear()
 
     def color_cell(self, cell, color, update_only=False):
         x, y = cell

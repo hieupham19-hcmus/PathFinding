@@ -103,15 +103,12 @@ class AStarDynamic:
             if steps_since_last_update % self.step_threshold == 0:
                 self.map_instance.move_polygons(current)
                 if self.visualizer:
-                    # Assuming you have a method in visualizer to clear and redraw everything.
-                    # This redraws the entire state including moved polygons and the current path.
-                    current_path = self._reconstruct_path(came_from, start, current)
-                    self.visualizer.visualize_after_move_polygon(current_path, self.map_instance.polygons)
-                    pygame.time.wait(200)
+                    # Here, pass only the current position to visualize
+                    self.visualizer.visualize_after_move_polygon(current, self.map_instance.polygons)
+                    pygame.time.wait(1000)
 
         if self.visualizer:
-            # Final path visualization after the complete search
-            final_path = self._reconstruct_path(came_from, start, goal)
-            self.visualizer.visualize_after_move_polygon(final_path, self.map_instance.polygons)
+            # Also, after the search completes, visualize the final position
+            self.visualizer.visualize_after_move_polygon(goal, self.map_instance.polygons)
 
         return self._reconstruct_path(came_from, start, goal), cost_so_far[goal]
