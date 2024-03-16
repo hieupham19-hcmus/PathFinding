@@ -51,8 +51,8 @@ class Map:
 
         for polygon in self.polygons:
             if (polygon._is_on_edge_or_inside_polygon(self.start_point) or
-                    polygon._is_on_edge_or_inside_polygon(self.end_point)):
-                raise ValueError("Error: Start and end points are not outside of polygons.")
+                polygon._is_on_edge_or_inside_polygon(self.end_point)):
+                raise ValueError("Error: Start, end and stop points are not outside of polygons.")
                 # print("")
                 # return False
             else:
@@ -97,8 +97,8 @@ class Map:
                 new_points = [(x + direction[0], y + direction[1]) for x, y in original_points]
                 # Check if the move is valid and does not result in collision or enclosing critical points
                 if (self._is_valid_move(new_points) and
-                    not self._collides_with_other_polygons(new_points, polygon) and
-                    self._does_not_enclose_robot(new_points, index)):
+                        not self._collides_with_other_polygons(new_points, polygon) and
+                        self._does_not_enclose_robot(new_points, index)):
                     temp_polygon = Polygon(new_points)
                     if self._critical_points_not_enclosed(temp_polygon):
                         polygon.points = new_points

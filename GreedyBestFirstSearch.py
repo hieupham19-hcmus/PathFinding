@@ -2,6 +2,7 @@ import numpy as np
 import heapq
 import random
 
+
 class GreedyBestFirstSearch:
     def __init__(self, map_instance, visualizer=None):
         self.map_instance = map_instance
@@ -45,13 +46,13 @@ class GreedyBestFirstSearch:
                 if not intersects_polygon:
                     result.append(next_point)
         return result
-    def search_between_points(self,start, goal):
+
+    def search_between_points(self, start, goal):
         frontier = []
         heapq.heappush(frontier, (0, start))  # Priority is just the heuristic
         came_from = {start: None}
         cost_so_far = {start: 0}
 
-      
         while frontier:
             current = heapq.heappop(frontier)[1]
 
@@ -66,13 +67,15 @@ class GreedyBestFirstSearch:
                     priority = self._heuristic(next, goal)
                     heapq.heappush(frontier, (priority, next))
                     came_from[next] = current
-         
+
+        if goal not in came_from:
+            return [], float('inf')
 
         path = self._reconstruct_path(came_from, start, goal)
-        
+
         return path, cost_so_far.get(goal, float('inf'))
-    
-    def find_best_path(self,current_start, stops, goal, path_to_goal=[], total_cost=0, best_result=[float('inf'), []]):
+
+    def find_best_path(self, current_start, stops, goal, path_to_goal=[], total_cost=0, best_result=[float('inf'), []]):
 
         if not stops:
             # Khi không còn điểm dừng, tính toán chi phí đến điểm kết thúc và cập nhật kết quả tốt nhất nếu cần
@@ -83,7 +86,7 @@ class GreedyBestFirstSearch:
                 best_result[1] = path_to_goal + final_path
         else:
             for i, stop in enumerate(stops):
-                next_stops = stops[:i] + stops[i+1:]
+                next_stops = stops[:i] + stops[i + 1:]
                 path, cost = self.search_between_points(current_start, stop)
                 if total_cost + cost >= best_result[0]:
                     continue
@@ -92,10 +95,6 @@ class GreedyBestFirstSearch:
 
     def greedy_best_first_search(self):
         self.visualizer.draw_grid()
-
-        """
-        Modified Greedy Best-First Search to include mandatory stops before reaching the final goal.
-        """
         path_to_goal = []  # This will store the entire path including stops
         total_cost = 0
         current_start = self.map_instance.start_point
@@ -103,16 +102,17 @@ class GreedyBestFirstSearch:
         goal = self.map_instance.end_point
 
         # Function to perform Greedy Best-First Search between two points
-        
-
-        
 
         best_result = [float('inf'), []]  # This sets up best_result with an initial infinite cost and an empty path.
-        self.find_best_path(current_start,stops,goal,path_to_goal,total_cost,best_result=best_result)
+        self.find_best_path(current_start, stops, goal, path_to_goal, total_cost, best_result=best_result)
+
+        if best_result[0] == float('inf'):
+            self.visualizer.no_path_found()
+            return [], float('inf')
 
         # path_to_goal.extend(final_path)
         if self.visualizer:
             random_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-            self.visualizer.update_visualization(random_color,best_result[1], best_result[0])
-      
+            self.visualizer.update_visualization(random_color, best_result[1], best_result[0])
+
         return best_result[1], best_result[0]

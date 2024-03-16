@@ -21,12 +21,6 @@ class Visualizer:
         self.font = pygame.font.SysFont('Verdana', 12)  # Font for text
         self.paused = False  # New attribute to control pause/resume
 
-        
-
-    #def draw_header(self):
-        #hello_text = self.font.render("Total cost:", True, (255, 0, 255))  
-        #text_rect = hello_text.get_rect(center=(self.width // 2, self.top_spacing // 2))  # Position the text at the top center
-        #self.screen.blit(hello_text, text_rect)
 
     def draw_grid(self):
         for y in range(self.map.height):
@@ -34,6 +28,7 @@ class Visualizer:
                 rect = pygame.Rect(x * self.cell_size, self.top_spacing + (self.map.height - 1 - y) * self.cell_size,
                                    self.cell_size, self.cell_size)  # Add top_spacing
 
+                # Keep the original color coding logic
                 if (x, y) == self.map.start_point:
                     color = (0, 255, 0)  # Start - Green
                 elif (x, y) == self.map.end_point:
@@ -50,6 +45,20 @@ class Visualizer:
                         color = polygon.color
 
                 pygame.draw.rect(self.screen, color, rect)
+
+                # Overlay text for special points after coloring
+                label = None
+                if (x, y) == self.map.start_point:
+                    label = 'S'
+                elif (x, y) == self.map.end_point:
+                    label = 'G'
+                elif self.map.matrix[y][x] == 'B':
+                    label = 'B'  # Or use specific numbering/naming for each stop point if preferred
+
+                if label is not None:
+                    text = self.font.render(label, True, (0, 0, 0) if color != (0, 0, 0) else (255, 255, 255))
+                    text_rect = text.get_rect(center=rect.center)
+                    self.screen.blit(text, text_rect)
 
                 # Draw the grid lines
                 pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)  # Black grid lines
@@ -70,9 +79,39 @@ class Visualizer:
             for x, y in path:
                 # Calculate rectangle for path cell
                 rect = pygame.Rect(x * self.cell_size, self.top_spacing + (self.map.height - 1 - y) * self.cell_size,
-                                self.cell_size, self.cell_size)
-                # Draw the path cell
-                pygame.draw.rect(self.screen, random_color, rect)
+                                   self.cell_size, self.cell_size)
+
+                # Keep the original color for special points, use path color otherwise
+                if (x, y) == self.map.start_point:
+                    color = (0, 255, 0)  # Start - Green
+                elif (x, y) == self.map.end_point:
+                    color = (255, 0, 0)  # End - Red
+                elif self.map.matrix[y][x] == 'B':
+                    color = (0, 0, 255)  # Stop - Blue
+                else:
+                    color = random_color  # Path cell color
+
+                # Draw the cell with its determined color
+                pygame.draw.rect(self.screen, color, rect)
+
+                # Overlay text for special points
+                label = None
+                if (x, y) == self.map.start_point:
+                    label = 'S'
+                elif (x, y) == self.map.end_point:
+                    label = 'G'
+                elif self.map.matrix[y][x] == 'B':
+                    label = 'B'
+
+                if label is not None:
+                    text_color = (0, 0, 0) if color != (0, 0, 0) else (255, 255, 255)  # Ensure text visibility
+                    text = self.font.render(label, True, text_color)
+                    text_rect = text.get_rect(center=rect.center)
+                    self.screen.blit(text, text_rect)
+
+                # Draw the grid lines after drawing the cell
+                pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)  # Black grid lines
+
                 # Add the rectangle to the dirty_rects list to update just this part
                 self.dirty_rects.append(rect)
 
@@ -83,12 +122,10 @@ class Visualizer:
             text_rect.top = self.top_spacing // 2  # Adjust the top position of the text
             self.screen.blit(cost_text, text_rect)
 
-        # Update only the rectangles that have changed in this frame.
         pygame.display.update(self.dirty_rects)
 
         # Clear the list of dirty rectangles so that only new changes are updated next frame.
         self.dirty_rects.clear()
-
 
     def run_visualization(self):
         running = True
@@ -128,7 +165,7 @@ class Visualizer:
         # Draw the current cell with a distinct color, e.g., orange
         pygame.draw.rect(self.screen, (255, 165, 0), rect)  # Orange for the current position
         self.dirty_rects.append(rect)
-
+        pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)
         # Update the display for only the modified region
         pygame.display.update(self.dirty_rects)
         self.dirty_rects.clear()
@@ -185,3 +222,11 @@ class Visualizer:
 #
         pygame.quit()  # Cleanup and close the window once the loop is exited
         sys.exit()
+
+    def no_path_found(self):
+        self.screen.fill((255, 255, 255))
+        text = self.font.render('No Path Found', True, (255, 0, 0))
+        text_rect = text.get_rect(center=(self.width // 2, self.height // 2))
+        self.screen.blit(text, text_rect)
+        pygame.display.flip()
+        pygame.time.delay(2000)

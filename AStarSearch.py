@@ -65,17 +65,25 @@ class AStarSearch:
                     heapq.heappush(frontier, (priority, next))
                     came_from[next] = current
 
+        # Check if goal was never reached
+        if goal not in came_from:
+            return None, float('inf')  # Indicate no path was found
+
         path = self._reconstruct_path(came_from, start, goal)
 
         return path, cost_so_far[goal]
 
-    def find_best_path(self, current_start, stops, goal, path_to_goal=None, total_cost=0, best_result=[float('inf'), []]):
-
+    def find_best_path(self, current_start, stops, goal, path_to_goal=None, total_cost=0,
+                       best_result=None):
+        if best_result is None:
+            best_result = [float('inf'), []]
         if path_to_goal is None:
             path_to_goal = []
+
         if not stops:
-            # Khi không còn điểm dừng, tính toán chi phí đến điểm kết thúc và cập nhật kết quả tốt nhất nếu cần
             final_path, final_cost = self._a_star_search_between_points(current_start, goal)
+            if final_path is None:  # No path found
+                return  # Skip if no path to goal
             total_cost += final_cost
             if total_cost < best_result[0]:
                 best_result[0] = total_cost
@@ -84,13 +92,14 @@ class AStarSearch:
             for i, stop in enumerate(stops):
                 next_stops = stops[:i] + stops[i + 1:]
                 path, cost = self._a_star_search_between_points(current_start, stop)
+                if path is None:  # Skip if no path to this stop
+                    continue
                 if total_cost + cost >= best_result[0]:
                     continue
-                # Gọi đệ quy với điểm dừng tiếp theo và cập nhật đường đi và tổng chi phí
                 self.find_best_path(stop, next_stops, goal, path_to_goal + path, total_cost + cost, best_result)
 
     def a_star_search(self):
-        self.visualizer.draw_grid()
+        self.visualizer.draw_grid() if self.visualizer else None
         path_to_goal = []
         total_cost = 0
 
@@ -98,12 +107,16 @@ class AStarSearch:
         stops = self.map_instance.stops.copy()
         goal = self.map_instance.end_point
 
-        best_result = [float('inf'), []]  # This sets up best_result with an initial infinite cost and an empty path.
+        best_result = [float('inf'), []]
         self.find_best_path(current_start, stops, goal, path_to_goal, total_cost, best_result=best_result)
 
-        # path_to_goal.extend(final_path)
+        if best_result[0] == float('inf'):
+            self.visualizer.no_path_found()
+            return None, float('inf')
+
         if self.visualizer:
             random_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
             self.visualizer.update_visualization(random_color, best_result[1], best_result[0])
 
         return best_result[1], best_result[0]
+
