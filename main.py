@@ -18,7 +18,7 @@ def main():
     #a_star = AStarSearch(map_instance, visualizer).a_star_search()
     #gbfs=GreedyBestFirstSearch(map_instance,visualizer).greedy_best_first_search()
     #dijkstra = DijkstraSearch(map_instance,visualizer).dijkstra_search()
-    AStarDynamic(map_instance,visualizer,step_threshold= 3).a_star_search()
+    AStarDynamic(map_instance,visualizer,step_threshold= 1).a_star_search()
     #map_instance.print_map()
     visualizer.run_event_loop()
 

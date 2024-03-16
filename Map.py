@@ -98,7 +98,7 @@ class Map:
                 # Check if the move is valid and does not result in collision or enclosing critical points
                 if (self._is_valid_move(new_points) and
                     not self._collides_with_other_polygons(new_points, polygon) and
-                    not self._does_not_enclose_robot(new_points, index)):
+                    self._does_not_enclose_robot(new_points, index)):
                     temp_polygon = Polygon(new_points)
                     if self._critical_points_not_enclosed(temp_polygon):
                         polygon.points = new_points
