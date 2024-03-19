@@ -34,3 +34,23 @@ This file provides an example input for the Pathfinding Robot Project. The forma
 - **Number of obstacles:** 3
 - **Polygonal Obstacles:** Three sets of coordinates are provided, each set representing a single obstacle defined by its vertices. These vertices form convex polygons as described in the project's input format specifications.
 
+## Pathfinding Algorithm Usage Guide (use release version)
+
+This guide provides instructions on how to run a pathfinding algorithm on a specified map using the `pathfinding.exe` command-line tool. Additionally, information on setting up the required environment using `requirements.txt` is included.
+
+### Running the Pathfinding Tool
+
+To use the pathfinding tool, you'll need to specify the input file and the search algorithm you wish to use. The tool is executed from the command line as follows: \
+
+\tab./pathfinding.exe --input <input_file> --search <search_algorithm>
+
+
+
+### Search Types
+
+The tool supports the following search algorithms:
+
+- `astar`: A* Search Algorithm
+- `greedy`: Greedy Best First Search Algorithm
+- `dijkstra`: Dijkstra's Algorithm
+- `dynamic`: A Dynamic version of the A* Search Algorithm
