@@ -19,13 +19,14 @@ To run the project successfully, input data must be structured as follows:
 - **Subsequent Lines:** Polygonal Obstacles - Each line represents a single obstacle defined by a sequence of coordinates forming a convex polygon. The vertices of the polygon are listed in a clockwise order, with the understanding that the last vertex connects back to the first one.
 
 ## Example Input File
+<code>
 22,18
 2,2 19,16 2,15 10,5
 3
 4,4 5,9 8,10 9,5
 8,12 8,17 13,12
 11,1 11,6 14,6 14,1
-
+</code>
 ### Description
 
 This file provides an example input for the Pathfinding Robot Project. The format of the file follows the input structure required by the project:
