@@ -16,7 +16,7 @@ To run the project successfully, input data must be structured as follows:
 
 - **Third Line:** Number of obstacles - Indicates how many polygonal obstacles are on the map.
 
-Subsequent Lines:** Polygonal Obstacles—Each line represents a single obstacle defined by a sequence of coordinates forming a convex polygon. The polygon's vertices are listed in clockwise order, with the understanding that the last vertex connects back to the first one.
+- **Subsequent Lines:** Polygonal Obstacles—Each line represents a single obstacle defined by a sequence of coordinates forming a convex polygon. The polygon's vertices are listed in clockwise order, with the understanding that the last vertex connects back to the first one.
 
 ## Example Input File
 22,18 \
