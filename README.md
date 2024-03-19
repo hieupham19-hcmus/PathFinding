@@ -40,7 +40,7 @@ This guide provides instructions on how to run a pathfinding algorithm on a spec
 
 ### Running the Pathfinding Tool
 
-To use the pathfinding tool, you'll need to specify the input file and the search algorithm you wish to use. The tool is executed from the command line as follows: \
+To use the pathfinding tool, you'll need to specify the input file and the search algorithm you wish to use. The tool is executed from the command line as follows: 
 
 *Tabspace* ./pathfinding.exe --input <input_file> --search <search_algorithm>
 
