@@ -68,4 +68,5 @@ This setup will ensure that all necessary Python packages are installed, allowin
 
 ### Running the Pathfinding Tool
 Execute the pathfinding tool using the following command:
+
 *Tabspace* python main.py --input <input_file> --search <search_algorithm>
