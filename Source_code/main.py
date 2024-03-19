@@ -29,7 +29,7 @@ def run_search_algorithm(algorithm_name, map_instance, visualizer):
 def main():
     # Create the parser
     parser = argparse.ArgumentParser(description="""Run a pathfinding algorithm on a specified map.
-Usage: ./pathfinding.exe --input <input_file> --search <search_algorithm>
+Usage: python main.py --input <input_file> --search <search_algorithm>
 Search Types:
 - astar: A* Search Algorithm
 - greedy: Greedy Best First Search Algorithm
