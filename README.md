@@ -44,7 +44,7 @@ This file provides an example input for the Pathfinding Robot Project. The forma
 - **Number of obstacles:** 3
 - **Polygonal Obstacles:** Three sets of coordinates are provided, each representing a single obstacle defined by its vertices. These vertices form convex polygons as described in the project's input format specifications.
 
-### Search Types
+## Search Types
 
 The tool supports the following search algorithms:
 
