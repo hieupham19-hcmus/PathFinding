@@ -60,7 +60,7 @@ Before running the pathfinding tool, ensure your Python environment is set up co
 
 To install these dependencies, use the following command in your terminal:
 
-*Tabspace* pip install -r requirements.txt
+&nbsp; pip install -r requirements.txt
 
 Ensure you have `pip` installed and you are in the directory containing the `requirements.txt` file or specify the path to it.
 
@@ -69,4 +69,4 @@ This setup will ensure that all necessary Python packages are installed, allowin
 ### Running the Pathfinding Tool
 Execute the pathfinding tool using the following command:
 
-*Tabspace* python main.py --input <input_file> --search <search_algorithm>
+&nbsp; python main.py --input <input_file> --search <search_algorithm>
