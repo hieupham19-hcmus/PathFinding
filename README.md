@@ -2,9 +2,19 @@
 
 ## Introduction
 
-This project is a part of the Artificial Intelligence curriculum at the University of Science, HCMC, guided by Dr. Le Nguyen Nhut Truong. It aims to explore and implement pathfinding algorithms to navigate a robot from a starting point to a destination while avoiding obstacles on a 2D map. The essence of this project lies in understanding the challenges of spatial navigation, algorithmic efficiency, and the application of artificial intelligence principles in solving real-world problems.
+This project is a part of the Artificial Intelligence curriculum at the University of Science, HCMC, guided by M.S. Le Nguyen Nhut Truong. It aims to explore and implement pathfinding algorithms to navigate a robot from a starting point to a destination while avoiding obstacles on a 2D map. The essence of this project lies in understanding the challenges of spatial navigation, algorithmic efficiency, and the application of artificial intelligence principles in solving real-world problems.
 
 Utilizing Python and allowing for graphical libraries, the project challenges students to develop a solution that finds a path and optimizes it according to various constraints and conditions. This endeavor is not just about coding; it's about creating a bridge between theoretical algorithms and their practical applications in robotics and AI.
+
+
+## Project Team
+
+- **Project Supervisor:** M.S. Le Nguyen Nhut Truong
+- **Team Members:** 
+  - Pham Ha Hieu - 22127114
+  - Tran Trung Hieu - 22127115
+  - Le Gia Huy - 22127152
+  - Ha Trong Thanh - 22127386 
 
 ## Input Format
 
