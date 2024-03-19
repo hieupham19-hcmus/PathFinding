@@ -44,7 +44,7 @@ This file provides an example input for the Pathfinding Robot Project. The forma
 - **Number of obstacles:** 3
 - **Polygonal Obstacles:** Three sets of coordinates are provided, each representing a single obstacle defined by its vertices. These vertices form convex polygons as described in the project's input format specifications.
 
-## Pathfinding Algorithm Usage Guide (use release version)
+## Pathfinding Algorithm Usage Guide (use Release Version)
 
 This guide provides instructions on how to run a pathfinding algorithm on a specified map using the `pathfinding.exe` command-line tool. Information on setting up the required environment using `requirements.txt` is also included.
 
